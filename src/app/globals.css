@@ -1,0 +1,123 @@
+@import "tailwindcss";
+
+/* ——— Warna diambil (di-sampling) dari brosur Mie Koncoan ——— */
+@theme {
+  --color-grape: #a406b4; /* ungu pil menu */
+  --color-grape-deep: #7b04be; /* ungu header minuman */
+  --color-grape-ink: #2b0838; /* tinta gelap untuk teks & outline */
+  --color-magenta: #c207da; /* blob pojok brosur */
+  --color-lemon: #feeb02; /* kuning logo */
+  --color-lemon-soft: #fff732;
+  --color-sky: #3fd8ff; /* pil harga cyan */
+  --color-chili: #e3141e; /* merah harga / sparkle */
+  --color-lavender: #e8d0f3; /* panel samping brosur minuman */
+  --color-lime: #b8e65a; /* irisan jeruk nipis */
+  --color-cream: #fff8ea;
+
+  --font-display: var(--font-lilita), ui-rounded, system-ui, sans-serif;
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+
+  --shadow-pop: 4px 4px 0 0 var(--color-grape-ink);
+  --shadow-pop-sm: 2px 2px 0 0 var(--color-grape-ink);
+  --shadow-pop-lg: 7px 7px 0 0 var(--color-grape-ink);
+
+  --animate-marquee: marquee 28s linear infinite;
+  --animate-marquee-rev: marquee 32s linear infinite reverse;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-spin-slow: spin 18s linear infinite;
+  --animate-wiggle: wiggle 2.4s ease-in-out infinite;
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0) rotate(var(--r, 0deg));
+    }
+    50% {
+      transform: translateY(-14px) rotate(var(--r, 0deg));
+    }
+  }
+  @keyframes wiggle {
+    0%,
+    100% {
+      transform: rotate(-6deg);
+    }
+    50% {
+      transform: rotate(6deg);
+    }
+  }
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-grape-ink);
+  font-family: var(--font-sans);
+  overflow-x: clip;
+}
+
+::selection {
+  background: var(--color-lemon);
+  color: var(--color-grape-ink);
+}
+
+/* Tekstur grain halus agar tidak terlalu "flat digital" */
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.18;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.17 0 0 0 0 0.03 0 0 0 0 0.22 0 0 0 0.5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* Pola titik-titik ala stiker */
+.dots {
+  background-image: radial-gradient(
+    color-mix(in oklab, var(--color-grape) 22%, transparent) 1.2px,
+    transparent 1.4px
+  );
+  background-size: 18px 18px;
+}
+
+.text-outline {
+  -webkit-text-stroke: 2px var(--color-grape-ink);
+  paint-order: stroke fill;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hormati preferensi kurangi gerakan */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
