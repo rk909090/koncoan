@@ -5,7 +5,7 @@ import Link from "next/link";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { ArrowLeft, Flame, Search, ShoppingBag, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CATEGORIES, type CategoryId, type MenuItem } from "@/data/menu";
+import { CATEGORIES, illustrationNote, type CategoryId, type MenuItem } from "@/data/menu";
 import { formatRp, SITE } from "@/lib/site";
 import { cartTotals, useCart } from "@/store/cart";
 import { QtyControl } from "@/components/ui/QtyControl";
@@ -250,7 +250,7 @@ export function OrderApp() {
         ))}
 
         <p className="mt-10 text-center text-xs text-grape-ink/50">
-          Foto menu adalah ilustrasi. Pertanyaan? WA {SITE.phoneDisplay}
+          {illustrationNote(menuItems) ? `${illustrationNote(menuItems)} ` : ""}Pertanyaan? WA {SITE.phoneDisplay}
         </p>
       </div>
     </div>

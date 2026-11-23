@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MapPin } from "lucide-react";
 import { requireUser } from "@/lib/server/auth";
-import { getOrder } from "@/lib/server/orders";
+import { getOrder, mapsLink } from "@/lib/server/orders";
 import { categoryLabel, formatPhone, orderTypeLabel, paymentLabel } from "@/lib/admin/labels";
 import { formatWib } from "@/lib/time";
 import { Badge, Card, CardTitle, PageHeader } from "@/components/admin/ui";
 import { formatRp } from "@/components/admin/format";
+import { OrderStatusBadge } from "@/components/admin/OrderStatusBadge";
 import { PrintButton, VoidOrderForm } from "./OrderActions";
+import { WebOrderActions } from "../WebOrderActions";
 
 /** Panel admin selalu dinamis (butuh sesi & data terbaru) — navigasi boleh menunggu server. */
 export const instant = false;
@@ -31,10 +33,17 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
         title={
           <span className="flex flex-wrap items-center gap-3">
             {o.order_no}
-            {o.status === "void" ? <Badge tone="danger">Dibatalkan</Badge> : <Badge tone="success">Lunas</Badge>}
+            <OrderStatusBadge status={o.status} />
+            {o.source === "web" && <Badge tone="info">Dari website</Badge>}
           </span>
         }
-        subtitle={`${formatWib(o.created_at)} WIB · kasir ${o.cashier_name ?? "-"}`}
+        subtitle={`${formatWib(o.created_at)} WIB · ${
+          o.source === "web"
+            ? o.status === "pending"
+              ? "menunggu diproses"
+              : `diproses ${o.cashier_name ?? "-"}${o.completed_at ? ` (${formatWib(o.completed_at)} WIB)` : ""}`
+            : `kasir ${o.cashier_name ?? "-"}`
+        }`}
         actions={<PrintButton id={o.id} />}
       />
 
@@ -93,11 +102,20 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
         </Card>
 
         <div className="space-y-6">
+          {o.status === "pending" && (
+            <Card className="border-grape">
+              <CardTitle>Proses pesanan web</CardTitle>
+              <p className="mb-3 text-xs text-grape-ink/60">
+                Selesaikan setelah pesanan dibayar (masuk laporan pendapatan), atau tolak bila batal.
+              </p>
+              <WebOrderActions id={o.id} total={o.total} />
+            </Card>
+          )}
           <Card>
             <CardTitle>Pembayaran</CardTitle>
             <dl className="space-y-2 text-sm">
-              <Row k="Metode" v={paymentLabel(o.payment_method)} />
-              <Row k="Dibayar" v={formatRp(o.amount_paid)} />
+              <Row k="Metode" v={o.status === "pending" ? "Belum dibayar" : paymentLabel(o.payment_method)} />
+              {o.status !== "pending" && <Row k="Dibayar" v={formatRp(o.amount_paid)} />}
               {o.change_amount > 0 && <Row k="Kembalian" v={formatRp(o.change_amount)} />}
               <Row k="Jenis pesanan" v={orderTypeLabel(o.order_type)} />
             </dl>
@@ -112,10 +130,36 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
                 {o.customer_phone && <p className="text-grape-ink/65">{formatPhone(o.customer_phone)}</p>}
                 {o.customer_address && <p className="mt-1 text-grape-ink/65">{o.customer_address}</p>}
               </div>
+            ) : o.contact_name ? (
+              <div className="text-sm">
+                <p className="font-bold">{o.contact_name}</p>
+                <p className="text-grape-ink/55">Tanpa nomor WhatsApp (tidak tercatat di data konsumen).</p>
+              </div>
             ) : (
               <p className="text-sm text-grape-ink/55">Konsumen umum (tidak dicatat).</p>
             )}
           </Card>
+          {o.order_type === "delivery" && o.delivery_address && (
+            <Card>
+              <CardTitle>Alamat antar</CardTitle>
+              <div className="space-y-1 text-sm">
+                <p>{o.delivery_address}</p>
+                {o.delivery_area && <p className="font-semibold">Desa/Kel.: {o.delivery_area}</p>}
+                {o.delivery_landmark && <p className="text-grape-ink/70">Patokan: {o.delivery_landmark}</p>}
+                {(o.contact_phone ?? o.customer_phone) && <p>WA: {formatPhone(o.contact_phone ?? o.customer_phone)}</p>}
+                {o.delivery_maps && (
+                  <a
+                    href={mapsLink(o.delivery_maps)!}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 font-bold text-grape hover:underline"
+                  >
+                    <MapPin className="size-4" /> Buka di Google Maps
+                  </a>
+                )}
+              </div>
+            </Card>
+          )}
           {o.status === "void" ? (
             <Card className="border-chili">
               <CardTitle>Dibatalkan</CardTitle>
@@ -126,7 +170,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
                 <b>Alasan:</b> {o.void_reason}
               </p>
             </Card>
-          ) : user.role === "admin" ? (
+          ) : user.role === "admin" && o.status === "paid" ? (
             <Card>
               <CardTitle>Batalkan pesanan</CardTitle>
               <p className="mb-3 text-xs text-grape-ink/60">

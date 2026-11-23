@@ -1,6 +1,7 @@
 import { CATEGORIES } from "@/data/menu";
 import { getFaqs, priceRangeText, priceStats, SITE_URL } from "@/lib/seo";
 import { getPublicMenu } from "@/lib/server/menu";
+import { getPublicOrdering } from "@/lib/server/settings";
 import { formatRp, mapsUrl, SITE } from "@/lib/site";
 
 /**
@@ -8,7 +9,7 @@ import { formatRp, mapsUrl, SITE } from "@/lib/site";
  * (konvensi llmstxt.org). Dibangkitkan dari menu aktif (database) agar selalu sinkron.
  */
 export async function GET() {
-  const menu = await getPublicMenu();
+  const [menu, ordering] = await Promise.all([getPublicMenu(), getPublicOrdering()]);
   const all = priceStats(menu).all;
   const sections = CATEGORIES.filter((c) => menu.some((m) => m.category === c.id)).map((c) => {
     const rows = menu.filter((m) => m.category === c.id)
@@ -20,7 +21,7 @@ export async function GET() {
     return `### ${c.label}\n${rows}`;
   }).join("\n\n");
 
-  const faq = getFaqs(menu).map((f) => `### ${f.q}\n${f.a}`).join("\n\n");
+  const faq = getFaqs(menu, ordering).map((f) => `### ${f.q}\n${f.a}`).join("\n\n");
 
   const body = `# ${SITE.name}
 
@@ -33,7 +34,7 @@ export async function GET() {
 - Peta: ${mapsUrl}
 - Situs: ${SITE_URL}
 - Halaman order: ${SITE_URL}/order
-- Cara pesan: pilih menu di ${SITE_URL}/order, isi nama & cara pesan (makan di tempat / ambil sendiri / diantar), lalu pesanan terkirim ke WhatsApp. Ongkir & ketersediaan antar dikonfirmasi penjual.
+- Cara pesan: pilih menu di ${SITE_URL}/order, isi nama & cara pesan (${["makan di tempat", ordering.takeAway && "ambil sendiri", ordering.delivery && "diantar"].filter(Boolean).join(" / ")}), lalu pesanan tercatat dan terkirim ke WhatsApp.${ordering.delivery ? ` Pesanan antar: ${ordering.deliveryNote}` : " Saat ini belum menerima pesanan antar."}
 - Harga dalam Rupiah (IDR), sesuai daftar menu terbaru Mie Koncoan.
 
 ## Menu & harga

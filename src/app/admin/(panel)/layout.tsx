@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { Sidebar, SidebarSkeleton } from "@/components/admin/Sidebar";
 import { getCurrentUser } from "@/lib/server/auth";
+import { countPendingWebOrders } from "@/lib/server/orders";
 
 /** Panel admin selalu dinamis (butuh sesi & data terbaru) — navigasi boleh menunggu server. */
 export const instant = false;
@@ -8,7 +9,8 @@ export const instant = false;
 /** Sidebar membaca sesi → dibungkus Suspense agar konten halaman tidak ikut tertahan. */
 async function SidebarWithUser() {
   const user = await getCurrentUser();
-  return <Sidebar user={user ? { name: user.name, username: user.username, role: user.role } : null} />;
+  const pendingWeb = user ? await countPendingWebOrders().catch(() => 0) : 0;
+  return <Sidebar user={user ? { name: user.name, username: user.username, role: user.role } : null} pendingWeb={pendingWeb} />;
 }
 
 export default function PanelLayout({ children }: LayoutProps<"/admin">) {

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { AnimatePresence, LayoutGroup, motion, useInView } from "motion/react";
 import { ArrowRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { CATEGORIES, type CategoryId } from "@/data/menu";
+import { CATEGORIES, illustrationNote, type CategoryId } from "@/data/menu";
 import { MenuCard } from "@/components/menu/MenuCard";
 import { useMenu } from "@/components/menu/MenuProvider";
 import { cn } from "@/lib/cn";
@@ -120,7 +120,7 @@ export function MenuSection() {
               <ArrowRight className="size-5" strokeWidth={3} />
             </span>
           </Link>
-          <p className="text-xs text-grape-ink/55">Foto menu adalah ilustrasi.</p>
+          {illustrationNote(menu) && <p className="text-xs text-grape-ink/55">{illustrationNote(menu)}</p>}
         </div>
       </div>
     </section>

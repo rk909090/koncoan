@@ -239,8 +239,9 @@ export async function getTopCustomers(f: ReportFilters, limit = 10) {
 export async function exportOrders(f: ReportFilters & { status?: string }) {
   const w = buildOrderWhere({ ...f, status: f.status });
   return query<Row>(
-    `SELECT o.order_no, o.created_at, o.status, o.order_type, o.payment_method, o.subtotal, o.discount, o.total,
-       o.amount_paid, o.change_amount, c.name AS customer_name, c.phone AS customer_phone, u.name AS cashier_name,
+    `SELECT o.order_no, o.created_at, o.source, o.status, o.order_type, o.payment_method, o.subtotal, o.discount, o.total,
+       o.amount_paid, o.change_amount, c.name AS customer_name, c.phone AS customer_phone,
+       o.contact_name, o.contact_phone, u.name AS cashier_name,
        o.note, o.void_reason
      FROM orders o
      LEFT JOIN customers c ON c.id = o.customer_id

@@ -3,7 +3,8 @@ import Link from "next/link";
 import { Calculator, ReceiptText, ShoppingBag, TrendingUp, Users, Wallet } from "lucide-react";
 import { requireUser } from "@/lib/server/auth";
 import { getSummary, getTopProducts, getTrend } from "@/lib/server/reports";
-import { listOrders } from "@/lib/server/orders";
+import { countPendingWebOrders, listOrders } from "@/lib/server/orders";
+import { AutoRefresh } from "@/components/admin/AutoRefresh";
 import { addDays, formatWib, formatYmdLong, formatYmdShort, todayWib } from "@/lib/time";
 import { orderTypeLabel, paymentLabel } from "@/lib/admin/labels";
 import { Badge, ButtonLink, Card, CardTitle, EmptyState, PageHeader, StatCard } from "@/components/admin/ui";
@@ -22,12 +23,13 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
   const today = todayWib();
   const yesterday = addDays(today, -1);
 
-  const [t, y, trend, top, recent] = await Promise.all([
+  const [t, y, trend, top, recent, pendingWeb] = await Promise.all([
     getSummary({ from: today, to: today }),
     getSummary({ from: yesterday, to: yesterday }),
     getTrend({ from: addDays(today, -6), to: today }),
     getTopProducts({ from: today, to: today }, 5),
     listOrders({ from: addDays(today, -6), to: today }, 1, 8),
+    countPendingWebOrders(),
   ]);
 
   return (
@@ -41,6 +43,19 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
           </ButtonLink>
         }
       />
+
+      <AutoRefresh seconds={30} count={pendingWeb} />
+      {pendingWeb > 0 && (
+        <Link
+          href="/admin/web-orders"
+          className="mb-4 flex items-center gap-3 rounded-2xl border-2 border-grape-ink bg-lemon px-4 py-3 font-bold shadow-pop-sm hover:-translate-y-0.5"
+        >
+          <span className="grid size-9 place-items-center rounded-full border-2 border-grape-ink bg-chili text-white">
+            {pendingWeb}
+          </span>
+          Pesanan dari website menunggu diproses →
+        </Link>
+      )}
 
       {sp.denied && (
         <p className="mb-4 rounded-2xl border-2 border-chili bg-chili/10 px-4 py-3 text-sm font-semibold text-chili">
@@ -108,10 +123,12 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
                     <p className="flex flex-wrap items-center gap-2 font-bold">
                       {o.order_no}
                       {o.status === "void" && <Badge tone="danger">Dibatalkan</Badge>}
+                      {o.status === "pending" && <Badge tone="warning">Menunggu</Badge>}
+                      {o.source === "web" && <Badge tone="info">Web</Badge>}
                     </p>
                     <p className="truncate text-xs text-grape-ink/60">
                       {formatWib(o.created_at)} · {orderTypeLabel(o.order_type)} · {paymentLabel(o.payment_method)}
-                      {o.customer_name ? ` · ${o.customer_name}` : ""}
+                      {o.customer_name || o.contact_name ? ` · ${o.customer_name ?? o.contact_name}` : ""}
                     </p>
                   </div>
                   <span className={o.status === "void" ? "font-bold text-grape-ink/40 line-through" : "font-bold"}>

@@ -24,7 +24,7 @@ export function Footer() {
         </nav>
       </div>
       <p className="mx-auto mt-10 max-w-6xl px-5 text-xs text-white/45">
-        © {SITE.name}. Foto menu adalah ilustrasi; penyajian asli dapat sedikit berbeda.
+        © {SITE.name}. Foto ilustrasi hanya gambaran; penyajian asli dapat sedikit berbeda.
       </p>
     </footer>
   );

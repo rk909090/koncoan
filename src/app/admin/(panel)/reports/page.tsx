@@ -17,6 +17,7 @@ import {
 } from "@/lib/server/reports";
 import { parseDateRange, parseIntParam, qs, str } from "@/lib/admin/filters";
 import {
+  ORDER_SOURCES,
   ORDER_TYPES,
   PAYMENT_METHODS,
   PRODUCT_CATEGORIES,
@@ -50,6 +51,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
     to,
     payment: str(sp.payment),
     type: str(sp.type),
+    source: str(sp.source),
     cashier: parseIntParam(sp.cashier),
     category: isCategory(cat) ? cat : undefined,
     product: str(sp.product)?.slice(0, 64),
@@ -79,6 +81,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
     ...(preset === "custom" ? { from, to } : { range: preset }),
     payment: f.payment,
     type: f.type,
+    source: f.source,
     cashier: f.cashier,
     category: f.category,
     product: f.product,
@@ -120,6 +123,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
         selects={[
           { name: "payment", label: "Pembayaran", value: f.payment, options: PAYMENT_METHODS.map((s) => ({ value: s.id, label: s.label })) },
           { name: "type", label: "Jenis pesanan", value: f.type, options: ORDER_TYPES.map((s) => ({ value: s.id, label: s.label })) },
+          { name: "source", label: "Sumber", value: f.source, options: ORDER_SOURCES.map((s) => ({ value: s.id, label: s.label })) },
           {
             name: "cashier",
             label: "Kasir",
@@ -315,7 +319,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
 
       <p className="mt-6 text-center text-sm">
         <Link
-          href={`/admin/orders${qs({ ...(preset === "custom" ? { from, to } : { range: preset }), payment: f.payment, type: f.type, cashier: f.cashier })}`}
+          href={`/admin/orders${qs({ ...(preset === "custom" ? { from, to } : { range: preset }), payment: f.payment, type: f.type, source: f.source, cashier: f.cashier })}`}
           className="font-bold text-grape hover:underline"
         >
           Lihat daftar transaksi untuk periode ini →

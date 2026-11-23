@@ -3,6 +3,7 @@
 import { refresh, updateTag } from "next/cache";
 import { getCurrentUser } from "@/lib/server/auth";
 import { createProduct, ProductError, setProductActive, updateProduct } from "@/lib/server/products";
+import { processProductImage, removeProductImage, storeProductImage } from "@/lib/server/productImages";
 import { PUBLIC_MENU_TAG } from "@/lib/server/menu";
 
 export type ProductFormState = { error?: string; ok?: boolean; values?: Record<string, string> };
@@ -28,9 +29,15 @@ export async function saveProductAction(_p: ProductFormState, fd: FormData): Pro
   const err = await requireAdmin();
   if (err) return { error: err };
   const id = String(fd.get("id") ?? "");
+  const photo = fd.get("photo");
   try {
+    // Foto diproses lebih dulu: bila gagal, produk belum tersimpan (tidak ada produk dobel saat mencoba lagi)
+    const image = photo instanceof File && photo.size > 0 ? await processProductImage(photo) : null;
+    let productId = id;
     if (id) await updateProduct(id, readForm(fd));
-    else await createProduct(readForm(fd));
+    else productId = await createProduct(readForm(fd));
+    if (image) await storeProductImage(productId, image);
+    else if (id && fd.get("removePhoto") === "1") await removeProductImage(id);
   } catch (e) {
     const values = Object.fromEntries(["name", "category", "price", "description", "serving"].map((k) => [k, String(fd.get(k) ?? "")]));
     if (e instanceof ProductError) return { error: e.message, values };

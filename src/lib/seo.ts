@@ -6,6 +6,7 @@
  */
 import { CATEGORIES, type MenuItem } from "@/data/menu";
 import { formatRp, mapsUrl, SITE } from "@/lib/site";
+import type { OrderingSettings } from "@/lib/ordering";
 
 export const SITE_URL = "https://koncoan.my.id";
 export const abs = (path: string) => new URL(path, SITE_URL).toString();
@@ -145,7 +146,7 @@ export function breadcrumbLd(items: { name: string; path: string }[]) {
 export type Faq = { q: string; a: string };
 
 /** FAQ dibangkitkan dari menu aktif; pertanyaan yang tidak relevan (mis. tidak ada menu pedas) dilewati. */
-export function getFaqs(menu: Menu): Faq[] {
+export function getFaqs(menu: Menu, ordering: OrderingSettings): Faq[] {
   const st = priceStats(menu);
   const names = (cat: MenuItem["category"]) =>
     menu
@@ -154,6 +155,9 @@ export function getFaqs(menu: Menu): Faq[] {
       .join(", ");
   const cheapestDrink = [...menu.filter((m) => m.category === "minuman")].sort((a, b) => a.price - b.price)[0];
   const spicy = menu.filter((m) => m.spicy).map((m) => m.name);
+  const typesText = ["makan di tempat", ordering.takeAway && "ambil sendiri", ordering.delivery && "diantar"]
+    .filter(Boolean)
+    .join(" / ");
 
   const priceParts = [
     st.mie && `menu mie ${rangeText(st.mie)}`,
@@ -179,11 +183,15 @@ export function getFaqs(menu: Menu): Faq[] {
     },
     {
       q: "Bagaimana cara pesan Mie Koncoan?",
-      a: `Buka halaman Order di ${SITE_URL}/order, pilih menu, isi nama dan cara pesan, lalu tekan "Pesan via WA". Pesanan tersusun otomatis dan dikirim ke WhatsApp ${SITE.phoneDisplay}. Bisa juga chat langsung ke nomor tersebut.`,
+      a: `Buka halaman Order di ${SITE_URL}/order, pilih menu, isi nama dan cara pesan (${typesText}), lalu tekan "Pesan via WA". Pesanan tercatat dengan nomor pesanan dan tersusun otomatis di WhatsApp ${SITE.phoneDisplay}. Bisa juga chat langsung ke nomor tersebut.`,
     },
     {
       q: "Apakah Mie Koncoan bisa diantar?",
-      a: "Saat memesan kamu bisa memilih makan di tempat, ambil sendiri, atau diantar. Ketersediaan pengantaran dan ongkirnya dikonfirmasi langsung oleh penjual lewat WhatsApp.",
+      a: ordering.delivery
+        ? `Bisa. Pilih "Diantar" saat memesan, lalu isi nomor WhatsApp, alamat lengkap, desa/kelurahan, dan patokan (bisa juga membagikan lokasi).${
+            ordering.deliveryMinOrder > 0 ? ` Minimal belanja ${formatRp(ordering.deliveryMinOrder)}.` : ""
+          } ${ordering.deliveryNote}`.trim()
+        : `Saat ini Mie Koncoan belum menerima pesanan antar. Kamu bisa ${ordering.takeAway ? "makan di tempat atau ambil sendiri" : "makan di tempat"}.`,
     },
     menuParts.length ? { q: "Menu apa saja yang ada di Mie Koncoan?", a: menuParts.join(" ") } : null,
     spicy.length ? { q: "Menu apa yang pedas?", a: `Menu dengan cabai/pedas: ${spicy.join(" dan ")}.` } : null,

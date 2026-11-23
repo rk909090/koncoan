@@ -45,7 +45,15 @@ function getPool(): Pool {
 
 /* ——————————————————— Migrasi ——————————————————— */
 
-type Migration = { version: number; name: string; statements: string[] };
+type Migration = {
+  version: number;
+  name: string;
+  statements: string[];
+  /** [tabel, kolom, definisi] — ditambahkan hanya bila belum ada */
+  columns?: [string, string, string][];
+  /** [tabel, nama index, kolom] — ditambahkan hanya bila belum ada */
+  indexes?: [string, string, string][];
+};
 
 const MIGRATIONS: Migration[] = [
   {
@@ -153,6 +161,48 @@ const MIGRATIONS: Migration[] = [
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
     ],
   },
+  {
+    version: 2,
+    name: "web orders, settings, product images",
+    statements: [
+      // Pesanan dari website masuk sebagai 'pending' (belum dibayar) → diselesaikan kasir jadi 'paid' atau ditolak ('void')
+      `ALTER TABLE orders
+        MODIFY status ENUM('pending','paid','void') NOT NULL DEFAULT 'paid',
+        MODIFY payment_method ENUM('cash','qris','transfer','other') NULL`,
+      `CREATE TABLE IF NOT EXISTS settings (
+        name VARCHAR(64) NOT NULL PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at DATETIME NOT NULL
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+      // Foto produk disimpan di database (bukan di folder aplikasi) karena folder
+      // aplikasi diganti setiap deploy di Hostinger.
+      `CREATE TABLE IF NOT EXISTS product_images (
+        product_id VARCHAR(64) NOT NULL PRIMARY KEY,
+        data MEDIUMBLOB NOT NULL,
+        mime VARCHAR(32) NOT NULL,
+        hash CHAR(16) NOT NULL,
+        width INT UNSIGNED NOT NULL,
+        height INT UNSIGNED NOT NULL,
+        updated_at DATETIME NOT NULL,
+        CONSTRAINT fk_product_images_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+    ],
+    // Kolom baru ditambah satu per satu dengan pengecekan, supaya aman dijalankan ulang
+    // bila migrasi sempat gagal di tengah (MySQL tidak punya ADD COLUMN IF NOT EXISTS).
+    columns: [
+      ["orders", "source", "ENUM('pos','web') NOT NULL DEFAULT 'pos' AFTER order_no"],
+      ["orders", "contact_name", "VARCHAR(100) NULL"],
+      ["orders", "contact_phone", "VARCHAR(20) NULL"],
+      ["orders", "delivery_address", "VARCHAR(255) NULL"],
+      ["orders", "delivery_area", "VARCHAR(100) NULL"],
+      ["orders", "delivery_landmark", "VARCHAR(255) NULL"],
+      ["orders", "delivery_maps", "VARCHAR(255) NULL"],
+      ["orders", "client_ip_hash", "CHAR(64) NULL"],
+      ["orders", "completed_at", "DATETIME NULL"],
+      ["orders", "completed_by", "INT UNSIGNED NULL"],
+    ],
+    indexes: [["orders", "idx_orders_source_status", "(source, status, created_at)"]],
+  },
 ];
 
 async function runMigrations() {
@@ -167,6 +217,20 @@ async function runMigrations() {
   for (const m of MIGRATIONS) {
     if (done.has(m.version)) continue;
     for (const sql of m.statements) await pool.query(sql);
+    for (const [table, column, def] of m.columns ?? []) {
+      const [c] = await pool.query<RowDataPacket[]>(
+        "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?",
+        [table, column],
+      );
+      if (!c.length) await pool.query(`ALTER TABLE \`${table}\` ADD COLUMN \`${column}\` ${def}`);
+    }
+    for (const [table, index, cols] of m.indexes ?? []) {
+      const [c] = await pool.query<RowDataPacket[]>(
+        "SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ?",
+        [table, index],
+      );
+      if (!c.length) await pool.query(`ALTER TABLE \`${table}\` ADD KEY \`${index}\` ${cols}`);
+    }
     await pool.query(
       "INSERT IGNORE INTO schema_migrations (version, name, applied_at) VALUES (?, ?, UTC_TIMESTAMP())",
       [m.version, m.name],
@@ -223,7 +287,7 @@ function ensureMigrated() {
 /* ——————————————————— Helper query ——————————————————— */
 
 export type Row = RowDataPacket;
-type Param = string | number | boolean | null | Date;
+type Param = string | number | boolean | null | Date | Buffer;
 
 export async function query<T extends Row = Row>(sql: string, params: Param[] = []): Promise<T[]> {
   await ensureMigrated();

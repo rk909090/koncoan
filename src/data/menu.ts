@@ -248,6 +248,16 @@ export const MENU: MenuItem[] = [
   },
 ];
 
+/** Foto bawaan (/menu/…) adalah ilustrasi AI dari brosur; foto unggahan admin (/media/…) adalah foto asli. */
+export const isIllustration = (image: string | null | undefined) => !!image?.startsWith("/menu/");
+
+/** Catatan kaki sesuai jenis foto yang tampil; null bila semua foto asli / tanpa foto. */
+export function illustrationNote(items: { image: string | null }[]) {
+  const n = items.filter((m) => isIllustration(m.image)).length;
+  if (n === 0) return null;
+  return n === items.filter((m) => m.image).length ? "Foto menu adalah ilustrasi." : "Sebagian foto menu adalah ilustrasi.";
+}
+
 export const MENU_BY_ID: Record<string, MenuItem> = Object.fromEntries(
   MENU.map((m) => [m.id, m]),
 );

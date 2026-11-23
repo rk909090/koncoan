@@ -16,9 +16,16 @@ export const PAYMENT_METHODS = [
 export type PaymentMethodId = (typeof PAYMENT_METHODS)[number]["id"];
 
 export const ORDER_STATUSES = [
+  { id: "pending", label: "Menunggu" },
   { id: "paid", label: "Lunas" },
   { id: "void", label: "Dibatalkan" },
 ] as const;
+
+export const ORDER_SOURCES = [
+  { id: "pos", label: "Kasir" },
+  { id: "web", label: "Website" },
+] as const;
+export type OrderSourceId = (typeof ORDER_SOURCES)[number]["id"];
 export type OrderStatusId = (typeof ORDER_STATUSES)[number]["id"];
 
 export const PRODUCT_CATEGORIES = [
@@ -32,13 +39,17 @@ const lookup = <T extends readonly { id: string; label: string }[]>(list: T) => 
   list.find((x) => x.id === id)?.label ?? id;
 
 export const orderTypeLabel = lookup(ORDER_TYPES);
-export const paymentLabel = lookup(PAYMENT_METHODS);
+const paymentLookup = lookup(PAYMENT_METHODS);
+/** Pesanan website yang belum dibayar belum punya metode pembayaran. */
+export const paymentLabel = (id: string | null | undefined) => (id ? paymentLookup(id) : "—");
 export const statusLabel = lookup(ORDER_STATUSES);
 export const categoryLabel = lookup(PRODUCT_CATEGORIES);
+export const sourceLabel = lookup(ORDER_SOURCES);
 
 export const isOrderType = (v: unknown): v is OrderTypeId => ORDER_TYPES.some((x) => x.id === v);
 export const isPaymentMethod = (v: unknown): v is PaymentMethodId => PAYMENT_METHODS.some((x) => x.id === v);
 export const isOrderStatus = (v: unknown): v is OrderStatusId => ORDER_STATUSES.some((x) => x.id === v);
+export const isOrderSource = (v: unknown): v is OrderSourceId => ORDER_SOURCES.some((x) => x.id === v);
 export const isCategory = (v: unknown): v is ProductCategoryId => PRODUCT_CATEGORIES.some((x) => x.id === v);
 
 /**

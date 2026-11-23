@@ -7,6 +7,7 @@ import { ItemSheet } from "@/components/cart/ItemSheet";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { MenuProvider } from "@/components/menu/MenuProvider";
 import { getPublicMenu } from "@/lib/server/menu";
+import { getPublicOrdering } from "@/lib/server/settings";
 import { SITE } from "@/lib/site";
 import { priceStats, restaurantLd, SITE_URL, websiteLd } from "@/lib/seo";
 import { formatRp } from "@/lib/site";
@@ -99,7 +100,7 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const menu = await getPublicMenu();
+  const [menu, ordering] = await Promise.all([getPublicMenu(), getPublicOrdering()]);
   return (
     <html lang="id" className={`${lilita.variable} ${jakarta.variable} antialiased`}>
       <head>
@@ -115,7 +116,7 @@ gtag('js', new Date());`,
         <JsonLd data={[restaurantLd(menu), websiteLd()]} />
       </head>
       <body className="min-h-dvh">
-        <MenuProvider items={menu}>
+        <MenuProvider items={menu} ordering={ordering}>
           {children}
           <CartHydrator />
           <ItemSheet />

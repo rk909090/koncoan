@@ -4,16 +4,37 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { MenuItem } from "@/data/menu";
 import { track } from "@/lib/analytics";
+import type { WebOrderType } from "@/lib/ordering";
 
 export type CartLine = { id: string; qty: number; note?: string };
 
-export type OrderType = "dine-in" | "take-away" | "delivery";
+export type OrderType = WebOrderType;
 
 export type Customer = {
   name: string;
+  /** No. WhatsApp (wajib untuk diantar) */
+  phone: string;
   orderType: OrderType;
+  /** Alamat lengkap: jalan, no. rumah, RT/RW */
   address: string;
+  /** Desa / kelurahan */
+  area: string;
+  /** Patokan (opsional) */
+  landmark: string;
+  /** "lat,lng" dari tombol bagikan lokasi (opsional) */
+  location: string;
   note: string;
+};
+
+const EMPTY_CUSTOMER: Customer = {
+  name: "",
+  phone: "",
+  orderType: "dine-in",
+  address: "",
+  area: "",
+  landmark: "",
+  location: "",
+  note: "",
 };
 
 type CartState = {
@@ -45,7 +66,7 @@ export const useCart = create<CartState>()(
         // sekaligus buang item keranjang yang sudah tidak dijual / dinonaktifkan
         set((s) => ({ menu, lines: s.lines.filter((l) => menu[l.id] && l.qty > 0) })),
       lines: [],
-      customer: { name: "", orderType: "dine-in", address: "", note: "" },
+      customer: EMPTY_CUSTOMER,
       isOpen: false,
       detailId: null,
       add: (id, qty = 1, note) => {

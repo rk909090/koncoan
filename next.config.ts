@@ -13,6 +13,8 @@ const nextConfig: NextConfig = {
   experimental: {
     // 404 global untuk multiple root layouts (situs publik & admin)
     globalNotFound: true,
+    // Upload foto produk dari panel admin (foto diperkecil di browser; batas server 8 MB + overhead form)
+    serverActions: { bodySizeLimit: "9mb" },
   },
 };
 

@@ -12,6 +12,8 @@ import {
   LogOut,
   Menu,
   ReceiptText,
+  Settings,
+  ShoppingBag,
   UserCog,
   Users,
   UtensilsCrossed,
@@ -23,7 +25,14 @@ import { cn } from "@/lib/cn";
 import { logoutAction } from "@/app/admin/login/actions";
 
 type Role = "admin" | "kasir";
-type NavItem = { href: string; label: string; icon: ComponentType<{ className?: string }>; adminOnly?: boolean };
+type NavItem = {
+  href: string;
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+  adminOnly?: boolean;
+  /** tampilkan jumlah pesanan website yang menunggu */
+  showPendingWeb?: boolean;
+};
 
 const NAV: { title: string; items: NavItem[] }[] = [
   {
@@ -31,6 +40,7 @@ const NAV: { title: string; items: NavItem[] }[] = [
     items: [
       { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
       { href: "/admin/pos", label: "Kasir (POS)", icon: Calculator },
+      { href: "/admin/web-orders", label: "Pesanan Web", icon: ShoppingBag, showPendingWeb: true },
       { href: "/admin/orders", label: "Pesanan", icon: ReceiptText },
       { href: "/admin/customers", label: "Konsumen", icon: Users },
     ],
@@ -41,6 +51,7 @@ const NAV: { title: string; items: NavItem[] }[] = [
       { href: "/admin/reports", label: "Laporan Penjualan", icon: ChartColumn, adminOnly: true },
       { href: "/admin/products", label: "Produk & Harga", icon: UtensilsCrossed, adminOnly: true },
       { href: "/admin/users", label: "Pengguna", icon: UserCog, adminOnly: true },
+      { href: "/admin/settings", label: "Pengaturan", icon: Settings, adminOnly: true },
     ],
   },
   {
@@ -55,7 +66,7 @@ function isActive(pathname: string, href: string) {
 
 export type SidebarUser = { name: string; username: string; role: Role } | null;
 
-function NavList({ user, onNavigate }: { user: SidebarUser; onNavigate?: () => void }) {
+function NavList({ user, pendingWeb, onNavigate }: { user: SidebarUser; pendingWeb: number; onNavigate?: () => void }) {
   const pathname = usePathname();
   return (
     <nav className="flex flex-1 flex-col gap-5 overflow-y-auto px-3 pb-4" aria-label="Menu admin">
@@ -88,6 +99,14 @@ function NavList({ user, onNavigate }: { user: SidebarUser; onNavigate?: () => v
                       )}
                       <item.icon className="relative size-5 shrink-0" />
                       <span className="relative">{item.label}</span>
+                      {item.showPendingWeb && pendingWeb > 0 && (
+                        <span
+                          className="relative ml-auto grid h-6 min-w-6 place-items-center rounded-full border-2 border-grape-ink bg-chili px-1.5 text-xs font-extrabold text-white"
+                          aria-label={`${pendingWeb} pesanan menunggu`}
+                        >
+                          {pendingWeb > 99 ? "99+" : pendingWeb}
+                        </span>
+                      )}
                     </Link>
                   </li>
                 );
@@ -140,7 +159,7 @@ function Brand() {
   );
 }
 
-export function Sidebar({ user }: { user: SidebarUser }) {
+export function Sidebar({ user, pendingWeb = 0 }: { user: SidebarUser; pendingWeb?: number }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -149,7 +168,7 @@ export function Sidebar({ user }: { user: SidebarUser }) {
       <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r-2 border-grape-ink bg-grape-deep lg:flex print:hidden">
         <Brand />
         <UserCard user={user} />
-        <NavList user={user} />
+        <NavList user={user} pendingWeb={pendingWeb} />
       </aside>
 
       {/* Mobile top bar */}
@@ -157,10 +176,15 @@ export function Sidebar({ user }: { user: SidebarUser }) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          aria-label="Buka menu"
-          className="grid size-10 place-items-center rounded-full border-2 border-grape-ink bg-lemon"
+          aria-label={pendingWeb > 0 ? `Buka menu (${pendingWeb} pesanan web menunggu)` : "Buka menu"}
+          className="relative grid size-10 place-items-center rounded-full border-2 border-grape-ink bg-lemon"
         >
           <Menu className="size-5" />
+          {pendingWeb > 0 && (
+            <span className="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full border-2 border-grape-ink bg-chili px-1 text-[10px] font-extrabold text-white">
+              {pendingWeb > 99 ? "99+" : pendingWeb}
+            </span>
+          )}
         </button>
         <Link href="/admin" className="rounded-xl bg-cream px-2 py-1">
           <Logo className="h-8 w-auto" />
@@ -197,7 +221,7 @@ export function Sidebar({ user }: { user: SidebarUser }) {
               </button>
               <Brand />
               <UserCard user={user} />
-              <NavList user={user} onNavigate={() => setOpen(false)} />
+              <NavList user={user} pendingWeb={pendingWeb} onNavigate={() => setOpen(false)} />
             </motion.aside>
           </div>
         )}

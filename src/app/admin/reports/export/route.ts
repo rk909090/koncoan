@@ -1,7 +1,7 @@
 import { getCurrentUser } from "@/lib/server/auth";
 import { exportItems, exportOrders } from "@/lib/server/reports";
 import { parseDateRange, parseIntParam, str, type SP } from "@/lib/admin/filters";
-import { categoryLabel, formatPhone, isCategory, orderTypeLabel, paymentLabel, statusLabel } from "@/lib/admin/labels";
+import { categoryLabel, formatPhone, isCategory, orderTypeLabel, paymentLabel, sourceLabel, statusLabel } from "@/lib/admin/labels";
 import { formatWib } from "@/lib/time";
 
 /** Export CSV (dibuka Excel/Google Sheets). Wajib login sebagai admin. */
@@ -19,6 +19,7 @@ export async function GET(request: Request) {
     to,
     payment: str(sp.payment),
     type: str(sp.type),
+    source: str(sp.source),
     cashier: parseIntParam(sp.cashier),
     category: isCategory(cat) ? cat : undefined,
     product: str(sp.product)?.slice(0, 64),
@@ -49,6 +50,7 @@ export async function GET(request: Request) {
     header = [
       "No. pesanan",
       "Waktu (WIB)",
+      "Sumber",
       "Status",
       "Jenis",
       "Pembayaran",
@@ -66,6 +68,7 @@ export async function GET(request: Request) {
     rows = data.map((r) => [
       r.order_no,
       formatWib(r.created_at),
+      sourceLabel(r.source),
       statusLabel(r.status),
       orderTypeLabel(r.order_type),
       paymentLabel(r.payment_method),
@@ -74,8 +77,8 @@ export async function GET(request: Request) {
       r.total,
       r.amount_paid,
       r.change_amount,
-      r.customer_name ?? "",
-      formatPhone(r.customer_phone),
+      r.customer_name ?? r.contact_name ?? "",
+      formatPhone(r.customer_phone ?? r.contact_phone),
       r.cashier_name ?? "",
       r.note ?? "",
       r.void_reason ?? "",

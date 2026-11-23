@@ -32,14 +32,25 @@ async function Receipt({ params }: { params: Promise<{ id: string }> }) {
       <p>No   : {order.order_no}</p>
       <p>Tgl  : {formatWib(order.created_at)} WIB</p>
       <p>Kasir: {order.cashier_name ?? "-"}</p>
-      <p>Jenis: {orderTypeLabel(order.order_type)}</p>
-      {order.customer_name && (
+      <p>
+        Jenis: {orderTypeLabel(order.order_type)}
+        {order.source === "web" ? " (website)" : ""}
+      </p>
+      {(order.customer_name || order.contact_name) && (
         <p>
-          Plg  : {order.customer_name}
-          {order.customer_phone ? ` (${formatPhone(order.customer_phone)})` : ""}
+          Plg  : {order.customer_name ?? order.contact_name}
+          {(order.customer_phone ?? order.contact_phone) ? ` (${formatPhone(order.customer_phone ?? order.contact_phone)})` : ""}
+        </p>
+      )}
+      {order.order_type === "delivery" && order.delivery_address && (
+        <p>
+          Antar: {order.delivery_address}
+          {order.delivery_area ? `, ${order.delivery_area}` : ""}
+          {order.delivery_landmark ? ` (patokan: ${order.delivery_landmark})` : ""}
         </p>
       )}
       {order.status === "void" && <p className="my-1 text-center font-bold">*** DIBATALKAN ***</p>}
+      {order.status === "pending" && <p className="my-1 text-center font-bold">*** BELUM DIBAYAR ***</p>}
       <p className="my-1">{line}</p>
       {items.map((it) => (
         <div key={it.id} className="mb-1">
@@ -68,10 +79,12 @@ async function Receipt({ params }: { params: Promise<{ id: string }> }) {
         <span>TOTAL</span>
         <span>{formatRp(order.total)}</span>
       </p>
-      <p className="flex justify-between">
-        <span>Bayar ({paymentLabel(order.payment_method)})</span>
-        <span>{formatRp(order.amount_paid)}</span>
-      </p>
+      {order.status !== "pending" && (
+        <p className="flex justify-between">
+          <span>Bayar ({paymentLabel(order.payment_method)})</span>
+          <span>{formatRp(order.amount_paid)}</span>
+        </p>
+      )}
       {order.change_amount > 0 && (
         <p className="flex justify-between">
           <span>Kembali</span>

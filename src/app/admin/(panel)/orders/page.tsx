@@ -4,10 +4,19 @@ import { Download, ReceiptText } from "lucide-react";
 import { requireUser } from "@/lib/server/auth";
 import { listCashiers, listOrders } from "@/lib/server/orders";
 import { parseDateRange, parseIntParam, parsePage, qs, str } from "@/lib/admin/filters";
-import { ORDER_STATUSES, ORDER_TYPES, PAYMENT_METHODS, formatPhone, orderTypeLabel, paymentLabel } from "@/lib/admin/labels";
+import {
+  ORDER_SOURCES,
+  ORDER_STATUSES,
+  ORDER_TYPES,
+  PAYMENT_METHODS,
+  formatPhone,
+  orderTypeLabel,
+  paymentLabel,
+} from "@/lib/admin/labels";
 import { formatWib, formatYmdLong } from "@/lib/time";
 import { FilterBar } from "@/components/admin/FilterBar";
 import { Badge, ButtonLink, EmptyState, PageHeader, Pagination, TableWrap, tdClass, thClass } from "@/components/admin/ui";
+import { OrderStatusBadge } from "@/components/admin/OrderStatusBadge";
 import { formatRp, num } from "@/components/admin/format";
 
 /** Panel admin selalu dinamis (butuh sesi & data terbaru) — navigasi boleh menunggu server. */
@@ -25,6 +34,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
     status: str(sp.status),
     payment: str(sp.payment),
     type: str(sp.type),
+    source: str(sp.source),
     cashier: parseIntParam(sp.cashier),
     q: str(sp.q)?.slice(0, 50),
   };
@@ -35,6 +45,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
     status: filters.status,
     payment: filters.payment,
     type: filters.type,
+    source: filters.source,
     cashier: filters.cashier,
     q: filters.q,
   };
@@ -67,6 +78,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
           { name: "status", label: "Status", value: filters.status, options: ORDER_STATUSES.map((s) => ({ value: s.id, label: s.label })) },
           { name: "payment", label: "Pembayaran", value: filters.payment, options: PAYMENT_METHODS.map((s) => ({ value: s.id, label: s.label })) },
           { name: "type", label: "Jenis", value: filters.type, options: ORDER_TYPES.map((s) => ({ value: s.id, label: s.label })) },
+          { name: "source", label: "Sumber", value: filters.source, options: ORDER_SOURCES.map((s) => ({ value: s.id, label: s.label })) },
           {
             name: "cashier",
             label: "Kasir",
@@ -101,6 +113,11 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
                     <Link href={`/admin/orders/${o.id}`} className="font-bold text-grape hover:underline">
                       {o.order_no}
                     </Link>
+                    {o.source === "web" && (
+                      <span className="ml-1.5 align-middle">
+                        <Badge tone="info">Web</Badge>
+                      </span>
+                    )}
                   </td>
                   <td className={`${tdClass} whitespace-nowrap`}>{formatWib(o.created_at)}</td>
                   <td className={tdClass}>
@@ -109,6 +126,8 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
                         <span className="font-semibold">{o.customer_name}</span>
                         {o.customer_phone && <span className="block text-xs text-grape-ink/55">{formatPhone(o.customer_phone)}</span>}
                       </Link>
+                    ) : o.contact_name ? (
+                      <span className="font-semibold">{o.contact_name}</span>
                     ) : (
                       <span className="text-grape-ink/45">Umum</span>
                     )}
@@ -116,11 +135,11 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
                   <td className={tdClass}>{orderTypeLabel(o.order_type)}</td>
                   <td className={tdClass}>{paymentLabel(o.payment_method)}</td>
                   <td className={`${tdClass} text-right tabular-nums`}>{num(Number(o.item_count))}</td>
-                  <td className={`${tdClass} text-right font-bold tabular-nums ${o.status === "void" ? "text-grape-ink/40 line-through" : ""}`}>
+                  <td className={`${tdClass} text-right font-bold tabular-nums ${o.status === "void" ? "text-grape-ink/40 line-through" : o.status === "pending" ? "text-grape-ink/60" : ""}`}>
                     {formatRp(o.total)}
                   </td>
                   <td className={tdClass}>
-                    {o.status === "void" ? <Badge tone="danger">Dibatalkan</Badge> : <Badge tone="success">Lunas</Badge>}
+                    <OrderStatusBadge status={o.status} />
                   </td>
                 </tr>
               ))}

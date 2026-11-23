@@ -11,6 +11,7 @@ import { Faq } from "@/components/site/Faq";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { faqLd, getFaqs, menuLd } from "@/lib/seo";
 import { getPublicMenu } from "@/lib/server/menu";
+import { getPublicOrdering } from "@/lib/server/settings";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -18,8 +19,8 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
-  const menu = await getPublicMenu();
-  const faqs = getFaqs(menu);
+  const [menu, ordering] = await Promise.all([getPublicMenu(), getPublicOrdering()]);
+  const faqs = getFaqs(menu, ordering);
   const names = (cat: string) => menu.filter((m) => m.category === cat).map((m) => m.name);
   return (
     <>

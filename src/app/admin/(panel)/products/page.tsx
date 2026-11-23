@@ -27,7 +27,7 @@ export default async function ProductsPage() {
       <p className="mb-6 rounded-2xl border-2 border-grape-ink bg-lemon/60 px-4 py-3 text-sm">
         <b>Catatan:</b> perubahan di sini berlaku untuk <b>Kasir (POS)</b> dan <b>menu & harga di website</b>{" "}
         (koncoan.my.id). Produk nonaktif disembunyikan dari website. Website biasanya ikut berubah dalam ±1 menit.
-        Produk baru belum punya foto (tampil ikon kategori).
+        Foto bisa diunggah lewat tombol Ubah (tanpa foto, website menampilkan ikon kategori).
       </p>
 
       <div className="space-y-8">
@@ -68,6 +68,7 @@ export default async function ProductsPage() {
                           price: Number(p.price),
                           description: p.description,
                           serving: p.serving,
+                          image: p.image ? String(p.image) : null,
                         }}
                       />
                       <form action={toggleProductAction}>

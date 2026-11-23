@@ -9,8 +9,11 @@ Dibangun dengan **Next.js 16 (App Router)**, **Tailwind CSS v4**, **Motion** (an
   bento grid, ilustrasi langkah pesan, peta lokasi.
 - **Halaman `/order` yang dioptimalkan untuk mobile** — header lengket dengan pencarian, chip kategori + scroll-spy,
   daftar menu dengan tombol `+` yang berubah jadi stepper, bottom sheet detail item (catatan per item), dan bar keranjang mengambang.
-- **Checkout via WhatsApp** — keranjang + data pemesan (nama, makan di tempat / ambil sendiri / diantar, alamat, catatan)
-  disusun otomatis menjadi pesan rapi ke `wa.me/6285812215099`. Tidak ada pembayaran online; konfirmasi, ongkir & pembayaran dilakukan oleh penjual via WhatsApp.
+- **Checkout via WhatsApp + tercatat di sistem** — pesanan disimpan ke database (no. pesanan `KW…`, status *Menunggu*),
+  lalu disusun otomatis menjadi pesan rapi ke `wa.me/6285812215099`. Pilihan makan di tempat / ambil sendiri / diantar
+  (ambil sendiri & antar bisa dimatikan dari admin). Pesanan antar meminta no. WhatsApp, alamat lengkap, desa/kelurahan,
+  patokan, dan opsional lokasi GPS. Tidak ada pembayaran online; konfirmasi, ongkir & pembayaran dilakukan penjual.
+  Bila database sedang bermasalah, pesanan tetap bisa dikirim lewat WhatsApp (tanpa nomor pesanan).
 - Keranjang tersimpan di `localStorage`, jadi tidak hilang saat halaman di-refresh.
 - Menghormati `prefers-reduced-motion`, ikon PWA/manifest, Open Graph image.
 
@@ -48,10 +51,12 @@ Login di **`/admin/login`**. Semua data tersimpan di MySQL/MariaDB.
 |---|---|---|
 | Dashboard | admin, kasir | Ringkasan hari ini vs kemarin, tren 7 hari, terlaris hari ini, pesanan terbaru |
 | Kasir (POS) | admin, kasir | Grid menu + kategori + pencarian (`/` untuk fokus, Enter = tambah), keranjang + catatan item, konsumen (umum / pilih / baru), jenis pesanan, diskon Rp/%, metode bayar (Tunai/QRIS/Transfer/Lainnya), uang diterima + kembalian, struk 58 mm |
+| Pesanan Web | admin, kasir | Pesanan dari website yang menunggu (diperbarui otomatis tiap 20 detik + bunyi & jumlah di judul tab): kontak, alamat antar + Google Maps, item; **Selesaikan & bayar** (masuk laporan) atau **Tolak** dengan alasan; cetak struk |
 | Pesanan | admin, kasir | Riwayat transaksi dengan filter periode, status, pembayaran, jenis, kasir, pencarian (no. pesanan/nama/no. HP); detail & cetak ulang struk; **pembatalan (admin) dengan alasan** |
 | Konsumen | admin, kasir | Daftar + pencarian + urutan, total belanja, detail profil, menu favorit, **riwayat order lengkap** |
 | Laporan penjualan | admin | Filter periode (preset & tanggal custom), pembayaran, jenis, kasir, kategori, produk; KPI + perbandingan periode sebelumnya; grafik harian/bulanan, per jam; per kategori/metode/jenis/kasir; produk terlaris; konsumen teratas; **export CSV** transaksi & item |
-| Produk & harga | admin | Tambah/ubah produk & harga, aktif/nonaktif |
+| Produk & harga | admin | Tambah/ubah produk & harga, **unggah foto**, aktif/nonaktif — langsung dipakai menu website |
+| Pengaturan | admin | Terima/tolak pesanan *ambil sendiri* & *diantar* dari website, info pengantaran, minimal belanja antar |
 | Pengguna | admin | Tambah kasir/admin, reset password, nonaktifkan |
 | Akun saya | semua | Ganti password |
 
@@ -59,7 +64,9 @@ Catatan penting:
 - Waktu disimpan dalam **UTC** dan ditampilkan/dihitung dalam **WIB (UTC+7)**.
 - Harga di transaksi selalu diambil dari database (bukan dari browser) dan disimpan per item, jadi laporan lama tetap akurat walau harga berubah.
 - Laporan pendapatan hanya menghitung pesanan **lunas**; pesanan dibatalkan tampil terpisah.
-- Produk di panel admin awalnya disalin dari `src/data/menu.ts`. Mengubah/menonaktifkan produk di admin juga mengubah menu website publik (cache ±1 menit). Produk baru belum punya foto.
+- Produk di panel admin awalnya disalin dari `src/data/menu.ts`. Mengubah/menonaktifkan produk di admin juga mengubah menu website publik (cache ±1 menit).
+- Foto produk unggahan diperkecil (maks. 1000 px, WebP) dan **disimpan di database** (`product_images`), karena folder aplikasi diganti setiap deploy. Disajikan di `/media/products/<id>-<hash>.webp` (cache permanen; URL berubah tiap foto diganti).
+- Pesanan website: harga selalu dari database; anti-spam (maks. 5 pesanan / 10 menit per IP, 40 / 10 menit total, honeypot); IP hanya disimpan sebagai hash. Konsumen dicatat bila mengisi no. WhatsApp (data konsumen lama tidak ditimpa dari website).
 - Keamanan: password di-hash (scrypt), sesi acak di cookie httpOnly (hanya hash-nya disimpan di DB), batas percobaan login, setiap Server Action memverifikasi sesi & peran, halaman admin `noindex` dan tanpa Google Tag Manager.
 
 ### Database & environment
