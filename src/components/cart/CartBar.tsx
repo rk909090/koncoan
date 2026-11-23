@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { ChevronRight, ShoppingBag } from "lucide-react";
 import { cartTotals, useCart } from "@/store/cart";
+import { useMenu } from "@/components/menu/MenuProvider";
 import { formatRp } from "@/lib/site";
 
 /** Bar keranjang mengambang di bawah layar — muncul saat ada item. */
@@ -11,7 +12,8 @@ export function CartBar() {
   const isOpen = useCart((s) => s.isOpen);
   const detailId = useCart((s) => s.detailId);
   const open = useCart((s) => s.open);
-  const { count, total } = cartTotals(lines);
+  const { byId } = useMenu();
+  const { count, total } = cartTotals(lines, byId);
   const visible = count > 0 && !isOpen && !detailId;
 
   return (

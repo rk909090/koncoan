@@ -1,8 +1,9 @@
 "use server";
 
-import { refresh } from "next/cache";
+import { refresh, updateTag } from "next/cache";
 import { getCurrentUser } from "@/lib/server/auth";
 import { createProduct, ProductError, setProductActive, updateProduct } from "@/lib/server/products";
+import { PUBLIC_MENU_TAG } from "@/lib/server/menu";
 
 export type ProductFormState = { error?: string; ok?: boolean; values?: Record<string, string> };
 
@@ -36,6 +37,7 @@ export async function saveProductAction(_p: ProductFormState, fd: FormData): Pro
     console.error("saveProductAction", e);
     return { error: "Gagal menyimpan produk.", values };
   }
+  updateTag(PUBLIC_MENU_TAG); // menu website publik ikut diperbarui
   refresh();
   return { ok: true };
 }
@@ -43,5 +45,6 @@ export async function saveProductAction(_p: ProductFormState, fd: FormData): Pro
 export async function toggleProductAction(fd: FormData) {
   if (await requireAdmin()) return;
   await setProductActive(String(fd.get("id")), fd.get("active") === "1");
+  updateTag(PUBLIC_MENU_TAG);
   refresh();
 }

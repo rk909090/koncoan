@@ -9,14 +9,18 @@ import { Footer } from "@/components/site/Footer";
 import { CartBar } from "@/components/cart/CartBar";
 import { Faq } from "@/components/site/Faq";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { faqLd, menuLd } from "@/lib/seo";
+import { faqLd, getFaqs, menuLd } from "@/lib/seo";
+import { getPublicMenu } from "@/lib/server/menu";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-export default function Home() {
+export default async function Home() {
+  const menu = await getPublicMenu();
+  const faqs = getFaqs(menu);
+  const names = (cat: string) => menu.filter((m) => m.category === cat).map((m) => m.name);
   return (
     <>
       <Navbar />
@@ -25,25 +29,25 @@ export default function Home() {
         <div className="relative z-10 -rotate-2 scale-105">
           <Marquee
             className="bg-lemon"
-            items={["Konco Biasa", "Konco Akrab", "Konco Spesial", "Cwiee Mie", "Wonton Chili Oil", "Wonton Kuah Pedas"]}
+            items={names("mie").slice(0, 6)}
           />
         </div>
         <div className="relative z-0 mt-[-6px] rotate-1 scale-105">
           <Marquee
             reverse
             className="bg-grape text-white"
-            items={["Konco Fresh Drink", "Soda Gembira", "Palm Sugar Coffee Milk", "Choco Freeze", "Dimsum Mix", "Gohyong"]}
+            items={["Konco Fresh Drink", ...names("minuman").slice(-3).reverse(), ...names("pendamping").slice(-2).reverse()]}
           />
         </div>
         <MenuSection />
         <Highlights />
         <HowToOrder />
-        <Faq />
+        <Faq faqs={faqs} />
         <Visit />
       </main>
       <Footer />
       <CartBar />
-      <JsonLd data={[menuLd(), faqLd()]} />
+      <JsonLd data={[menuLd(menu), faqLd(faqs)]} />
     </>
   );
 }

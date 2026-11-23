@@ -1,12 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import { motion } from "motion/react";
 import { Flame } from "lucide-react";
 import type { MenuItem } from "@/data/menu";
 import { formatRp } from "@/lib/site";
 import { useCart } from "@/store/cart";
 import { QtyControl } from "@/components/ui/QtyControl";
+import { MenuImage } from "./MenuImage";
 import { cn } from "@/lib/cn";
 
 const TILTS = ["-rotate-1", "rotate-1", "-rotate-[0.5deg]", "rotate-[0.5deg]"];
@@ -31,12 +31,10 @@ export function MenuCard({ item, index = 0 }: { item: MenuItem; index?: number }
       onClick={() => openDetail(item.id)}
     >
       <div className="relative aspect-square overflow-hidden rounded-[20px] bg-[#fff4dc]">
-        <Image
-          src={item.image}
-          alt={item.name}
-          fill
+        <MenuImage
+          item={item}
           sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 280px"
-          className="object-cover transition-transform duration-500 ease-out group-hover:scale-110"
+          className="transition-transform duration-500 ease-out group-hover:scale-110"
         />
         {(item.tag || item.portion) && (
           <span

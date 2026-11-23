@@ -30,6 +30,7 @@ function getPool(): Pool {
       password: requiredEnv("DB_PASSWORD"),
       // shared hosting: batasi jumlah koneksi per proses
       connectionLimit: 4,
+      connectTimeout: 5000,
       waitForConnections: true,
       charset: "utf8mb4",
       timezone: "Z",

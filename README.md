@@ -24,8 +24,12 @@ npm run build && npm start
 
 ## Mengubah menu / harga
 
-Semua data menu ada di [`src/data/menu.ts`](src/data/menu.ts); kontak & alamat di [`src/lib/site.ts`](src/lib/site.ts).
-Nama dan harga disalin dari brosur. Deskripsi singkat ditulis berdasarkan apa yang terlihat di foto brosur — silakan disesuaikan.
+Menu & harga di website diambil dari tabel `products` di database — ubah lewat **/admin → Produk & harga**
+(hanya produk aktif yang tampil; website ikut berubah dalam ±1 menit). Lihat [`src/lib/server/menu.ts`](src/lib/server/menu.ts).
+
+[`src/data/menu.ts`](src/data/menu.ts) berisi menu awal dari brosur: dipakai untuk mengisi database pertama kali,
+sebagai cadangan bila database tidak bisa diakses, dan untuk atribut yang belum ada di database (foto, label, pedas,
+kata kunci pencarian; dicocokkan lewat id produk). Kontak & alamat ada di [`src/lib/site.ts`](src/lib/site.ts).
 
 ## Aset grafis
 
@@ -55,7 +59,7 @@ Catatan penting:
 - Waktu disimpan dalam **UTC** dan ditampilkan/dihitung dalam **WIB (UTC+7)**.
 - Harga di transaksi selalu diambil dari database (bukan dari browser) dan disimpan per item, jadi laporan lama tetap akurat walau harga berubah.
 - Laporan pendapatan hanya menghitung pesanan **lunas**; pesanan dibatalkan tampil terpisah.
-- Produk di panel admin awalnya disalin dari `src/data/menu.ts`. Mengubah produk di admin **belum** mengubah menu di website publik.
+- Produk di panel admin awalnya disalin dari `src/data/menu.ts`. Mengubah/menonaktifkan produk di admin juga mengubah menu website publik (cache ±1 menit). Produk baru belum punya foto.
 - Keamanan: password di-hash (scrypt), sesi acak di cookie httpOnly (hanya hash-nya disimpan di DB), batas percobaan login, setiap Server Action memverifikasi sesi & peran, halaman admin `noindex` dan tanpa Google Tag Manager.
 
 ### Database & environment

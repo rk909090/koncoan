@@ -1,5 +1,9 @@
 /**
- * Data menu Warung Mie Koncoan.
+ * Data menu BAWAAN Warung Mie Koncoan.
+ * Sejak panel admin aktif, menu publik diambil dari tabel `products` (lihat
+ * src/lib/server/menu.ts). File ini dipakai sebagai: (1) data awal (seed) tabel
+ * products, (2) cadangan bila database tidak bisa diakses, dan (3) sumber atribut
+ * tambahan (tag, pedas, kata kunci) untuk produk dengan id yang sama.
  * Nama & harga disalin dari brosur resmi (menu mie + "Konco Fresh Drink").
  * Deskripsi singkat ditulis berdasarkan isi yang terlihat di foto brosur —
  * silakan sesuaikan bila ada detail resep yang berbeda.
@@ -13,7 +17,8 @@ export type MenuItem = {
   price: number;
   category: CategoryId;
   description: string;
-  image: string;
+  /** null untuk produk baru dari admin yang belum punya foto */
+  image: string | null;
   /** Keterangan porsi, mis. "6 pcs" */
   portion?: string;
   tag?: "Pedas" | "Paling Hemat";

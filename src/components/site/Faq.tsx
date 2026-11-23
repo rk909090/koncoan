@@ -1,12 +1,12 @@
 import { Plus } from "lucide-react";
-import { FAQS } from "@/lib/seo";
+import type { Faq as FaqItem } from "@/lib/seo";
 
 /**
  * FAQ yang terlihat di halaman. Isinya sama persis dengan JSON-LD FAQPage
- * (FAQS di src/lib/seo.ts). Memakai <details>/<summary> sehingga jawaban
+ * (getFaqs di src/lib/seo.ts, dari menu aktif). Memakai <details>/<summary> sehingga jawaban
  * tetap ada di HTML untuk crawler & mesin AI, tanpa perlu JavaScript.
  */
-export function Faq() {
+export function Faq({ faqs }: { faqs: FaqItem[] }) {
   return (
     <section id="faq" className="relative scroll-mt-20 bg-lavender/60 py-20 sm:py-28" aria-labelledby="faq-title">
       <div className="mx-auto max-w-3xl px-5">
@@ -17,7 +17,7 @@ export function Faq() {
           Pertanyaan yang <span className="text-grape">sering ditanya</span>
         </h2>
         <div className="mt-10 space-y-3">
-          {FAQS.map((f, i) => (
+          {faqs.map((f, i) => (
             <details
               key={f.q}
               open={i === 0}

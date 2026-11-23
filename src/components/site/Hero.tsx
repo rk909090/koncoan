@@ -13,18 +13,24 @@ import {
 } from "motion/react";
 import { ArrowRight, ArrowDown } from "lucide-react";
 import { useRef, type PointerEvent, type ReactNode } from "react";
-import { MENU } from "@/data/menu";
 import { formatRp } from "@/lib/site";
 import { Burst, Sparkle } from "@/components/ui/icons";
+import { useMenu } from "@/components/menu/MenuProvider";
 
-const minMie = Math.min(...MENU.filter((m) => m.category === "mie").map((m) => m.price));
-const minDrink = Math.min(...MENU.filter((m) => m.category === "minuman").map((m) => m.price));
+/** Harga termurah di satu kategori; null bila kategori kosong. */
+const minPrice = (items: { category: string; price: number }[], cat: string) => {
+  const p = items.filter((m) => m.category === cat).map((m) => m.price);
+  return p.length ? Math.min(...p) : null;
+};
 
 const WORDS = ["Mie", "nya", "Anak", "Muda"];
 
 export function Hero() {
   const ref = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
+  const { items: menu } = useMenu();
+  const minMie = minPrice(menu, "mie");
+  const minDrink = minPrice(menu, "minuman");
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const yImg = useTransform(scrollYProgress, [0, 1], [0, reduce ? 0 : 120]);
   const rotBadge = useTransform(scrollYProgress, [0, 1], [0, 160]);
@@ -142,9 +148,9 @@ export function Hero() {
             transition={{ delay: 0.9 }}
             className="mt-8 flex flex-wrap gap-3"
           >
-            <PriceChip label="Mie mulai" value={formatRp(minMie)} className="bg-sky" />
-            <PriceChip label="Minum mulai" value={formatRp(minDrink)} className="bg-lime" />
-            <PriceChip label="Total menu" value={`${MENU.length} pilihan`} className="bg-lavender" />
+            {minMie !== null && <PriceChip label="Mie mulai" value={formatRp(minMie)} className="bg-sky" />}
+            {minDrink !== null && <PriceChip label="Minum mulai" value={formatRp(minDrink)} className="bg-lime" />}
+            <PriceChip label="Total menu" value={`${menu.length} pilihan`} className="bg-lavender" />
           </motion.dl>
         </div>
 

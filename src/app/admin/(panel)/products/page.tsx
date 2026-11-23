@@ -21,12 +21,13 @@ export default async function ProductsPage() {
     <>
       <PageHeader
         title="Produk & harga"
-        subtitle="Menu yang tampil di halaman Kasir. Nonaktifkan produk yang sedang habis."
+        subtitle="Menu untuk Kasir dan website publik. Nonaktifkan produk yang sedang habis."
         actions={<ProductEditor />}
       />
       <p className="mb-6 rounded-2xl border-2 border-grape-ink bg-lemon/60 px-4 py-3 text-sm">
-        <b>Catatan:</b> perubahan di sini berlaku untuk <b>Kasir (POS) & laporan</b>. Menu & harga di website publik
-        (koncoan.my.id) masih diambil dari kode situs dan belum otomatis ikut berubah.
+        <b>Catatan:</b> perubahan di sini berlaku untuk <b>Kasir (POS)</b> dan <b>menu & harga di website</b>{" "}
+        (koncoan.my.id). Produk nonaktif disembunyikan dari website. Website biasanya ikut berubah dalam ±1 menit.
+        Produk baru belum punya foto (tampil ikon kategori).
       </p>
 
       <div className="space-y-8">

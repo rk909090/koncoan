@@ -4,15 +4,20 @@ import Link from "next/link";
 import { AnimatePresence, LayoutGroup, motion, useInView } from "motion/react";
 import { ArrowRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { CATEGORIES, MENU, type CategoryId } from "@/data/menu";
+import { CATEGORIES, type CategoryId } from "@/data/menu";
 import { MenuCard } from "@/components/menu/MenuCard";
+import { useMenu } from "@/components/menu/MenuProvider";
 import { cn } from "@/lib/cn";
 import { track } from "@/lib/analytics";
 
 export function MenuSection() {
-  const [active, setActive] = useState<CategoryId>("mie");
+  const [selected, setActive] = useState<CategoryId>("mie");
+  const { items: menu } = useMenu();
+  // hanya kategori yang punya produk aktif; bila kategori terpilih kosong, pindah ke yang pertama
+  const cats = CATEGORIES.filter((c) => menu.some((m) => m.category === c.id));
+  const active = cats.some((c) => c.id === selected) ? selected : (cats[0]?.id ?? selected);
   const cat = CATEGORIES.find((c) => c.id === active)!;
-  const items = MENU.filter((m) => m.category === active);
+  const items = menu.filter((m) => m.category === active);
 
   // Analytics: kirim view_item_list saat grid benar-benar terlihat, sekali per kategori
   const gridRef = useRef<HTMLDivElement>(null);
@@ -24,9 +29,9 @@ export function MenuSection() {
     track.viewItemList(
       `home_${active}`,
       `Beranda - ${CATEGORIES.find((c) => c.id === active)!.label}`,
-      MENU.filter((m) => m.category === active),
+      menu.filter((m) => m.category === active),
     );
-  }, [active, gridInView]);
+  }, [active, gridInView, menu]);
 
   return (
     <section id="menu" className="relative scroll-mt-20 py-20 sm:py-28">
@@ -69,7 +74,7 @@ export function MenuSection() {
               className="no-scrollbar -mx-5 flex max-w-[100vw] gap-1 overflow-x-auto px-5 md:mx-0 md:px-0"
             >
               <div className="flex gap-1 rounded-full border-2 border-grape-ink bg-white p-1 shadow-pop-sm">
-                {CATEGORIES.map((c) => (
+                {cats.map((c) => (
                   <button
                     key={c.id}
                     role="tab"
@@ -115,7 +120,7 @@ export function MenuSection() {
               <ArrowRight className="size-5" strokeWidth={3} />
             </span>
           </Link>
-          <p className="text-xs text-grape-ink/55">Foto menu adalah ilustrasi. Harga sesuai brosur resmi.</p>
+          <p className="text-xs text-grape-ink/55">Foto menu adalah ilustrasi.</p>
         </div>
       </div>
     </section>

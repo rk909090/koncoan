@@ -5,10 +5,12 @@ import Link from "next/link";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { ArrowLeft, Flame, Search, ShoppingBag, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CATEGORIES, MENU, type CategoryId, type MenuItem } from "@/data/menu";
+import { CATEGORIES, type CategoryId, type MenuItem } from "@/data/menu";
 import { formatRp, SITE } from "@/lib/site";
 import { cartTotals, useCart } from "@/store/cart";
 import { QtyControl } from "@/components/ui/QtyControl";
+import { MenuImage } from "@/components/menu/MenuImage";
+import { useMenu } from "@/components/menu/MenuProvider";
 import { Logo } from "@/components/ui/Logo";
 import { cn } from "@/lib/cn";
 import { track } from "@/lib/analytics";
@@ -25,13 +27,14 @@ export function OrderApp() {
 
   const lines = useCart((s) => s.lines);
   const openCart = useCart((s) => s.open);
-  const { count } = cartTotals(lines);
+  const { items: menuItems, byId } = useMenu();
+  const { count } = cartTotals(lines, byId);
 
   const filtered = useMemo(() => {
     const q = norm(query.trim());
-    if (!q) return MENU;
-    return MENU.filter((m) => norm(`${m.name} ${m.description} ${m.keywords ?? ""}`).includes(q));
-  }, [query]);
+    if (!q) return menuItems;
+    return menuItems.filter((m) => norm(`${m.name} ${m.description} ${m.keywords ?? ""}`).includes(q));
+  }, [query, menuItems]);
 
   const groups = CATEGORIES.map((c) => ({
     ...c,
@@ -40,8 +43,8 @@ export function OrderApp() {
 
   // Analytics: daftar menu dilihat (sekali saat halaman dibuka)
   useEffect(() => {
-    track.viewItemList("order_page", "Halaman Order", MENU);
-  }, []);
+    track.viewItemList("order_page", "Halaman Order", menuItems);
+  }, [menuItems]);
 
   // Analytics: pencarian (debounce agar tidak terkirim per huruf)
   useEffect(() => {
@@ -247,7 +250,7 @@ export function OrderApp() {
         ))}
 
         <p className="mt-10 text-center text-xs text-grape-ink/50">
-          Foto menu adalah ilustrasi. Harga sesuai brosur. Pertanyaan? WA {SITE.phoneDisplay}
+          Foto menu adalah ilustrasi. Pertanyaan? WA {SITE.phoneDisplay}
         </p>
       </div>
     </div>
@@ -276,7 +279,7 @@ function OrderRow({ item, index }: { item: MenuItem; index: number }) {
         )}
       >
         <div className="relative size-24 shrink-0 overflow-hidden rounded-2xl bg-[#fff4dc] sm:size-28">
-          <Image src={item.image} alt={item.name} fill sizes="112px" className="object-cover" />
+          <MenuImage item={item} sizes="112px" />
           {item.portion && (
             <span className="absolute bottom-1 left-1 rounded-full border border-grape-ink bg-sky px-1.5 text-[10px] font-extrabold">
               {item.portion}

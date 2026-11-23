@@ -1,38 +1,36 @@
 "use client";
 
-import Image from "next/image";
 import { Flame, Minus, Plus } from "lucide-react";
 import { useState } from "react";
-import { CATEGORIES, MENU_BY_ID } from "@/data/menu";
+import { CATEGORIES, type MenuItem } from "@/data/menu";
 import { formatRp } from "@/lib/site";
 import { useCart } from "@/store/cart";
 import { Sheet } from "@/components/ui/Sheet";
+import { MenuImage } from "@/components/menu/MenuImage";
+import { useMenu } from "@/components/menu/MenuProvider";
 
 export function ItemSheet() {
   const detailId = useCart((s) => s.detailId);
   const closeDetail = useCart((s) => s.closeDetail);
-  const item = detailId ? MENU_BY_ID[detailId] : undefined;
+  const { byId } = useMenu();
+  const item = detailId ? byId[detailId] : undefined;
 
   return (
     <Sheet
       open={!!item}
       onClose={closeDetail}
       title={item ? <span className="block truncate">{item.name}</span> : ""}
-      footer={item ? <ItemSheetFooter key={item.id} id={item.id} /> : null}
+      footer={item ? <ItemSheetFooter key={item.id} item={item} /> : null}
     >
       {item && (
         <div>
           <div className="relative mx-auto aspect-square w-full max-w-sm overflow-hidden rounded-3xl border-2 border-grape-ink bg-[#fff4dc]">
-            <Image
-              src={item.image}
-              alt={item.name}
-              fill
-              sizes="(max-width: 640px) 90vw, 384px"
-              className="object-cover"
-            />
-            <span className="absolute bottom-2 left-2 rounded-full bg-white/85 px-2 py-0.5 text-[10px] font-semibold text-grape-ink/70">
-              Foto ilustrasi
-            </span>
+            <MenuImage item={item} sizes="(max-width: 640px) 90vw, 384px" />
+            {item.image && (
+              <span className="absolute bottom-2 left-2 rounded-full bg-white/85 px-2 py-0.5 text-[10px] font-semibold text-grape-ink/70">
+                Foto ilustrasi
+              </span>
+            )}
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <span className="rounded-full border-2 border-grape-ink bg-lavender px-3 py-0.5 text-xs font-bold">
@@ -57,8 +55,8 @@ export function ItemSheet() {
   );
 }
 
-function ItemSheetFooter({ id }: { id: string }) {
-  const item = MENU_BY_ID[id];
+function ItemSheetFooter({ item }: { item: MenuItem }) {
+  const id = item.id;
   const line = useCart((s) => s.lines.find((l) => l.id === id));
   const add = useCart((s) => s.add);
   const setQty = useCart((s) => s.setQty);

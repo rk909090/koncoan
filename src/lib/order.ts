@@ -1,4 +1,4 @@
-import { MENU_BY_ID } from "@/data/menu";
+import type { MenuItem } from "@/data/menu";
 import type { CartLine, Customer } from "@/store/cart";
 import { formatRp } from "@/lib/site";
 
@@ -13,12 +13,12 @@ export function orderTypeLabel(t: Customer["orderType"]) {
 }
 
 /** Susun pesan WhatsApp yang rapi dari isi keranjang. */
-export function buildOrderMessage(lines: CartLine[], c: Customer) {
+export function buildOrderMessage(lines: CartLine[], c: Customer, menu: Record<string, MenuItem>) {
   const rows: string[] = [];
   let total = 0;
   let i = 1;
   for (const l of lines) {
-    const item = MENU_BY_ID[l.id];
+    const item = menu[l.id];
     if (!item) continue;
     const sub = item.price * l.qty;
     total += sub;

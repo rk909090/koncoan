@@ -8,7 +8,7 @@
  * `get_directions`. Untuk event e-commerce, objek `ecommerce` di-reset dulu
  * (sesuai panduan GA4) agar data item dari event sebelumnya tidak terbawa.
  */
-import { MENU_BY_ID, type MenuItem } from "@/data/menu";
+import type { MenuItem } from "@/data/menu";
 import type { CartLine } from "@/store/cart";
 
 const CURRENCY = "IDR";
@@ -57,11 +57,13 @@ export function toGaItem(item: MenuItem, quantity = 1, extra?: Partial<GaItem>):
   };
 }
 
-function linesToItems(lines: CartLine[]) {
+type MenuById = Record<string, MenuItem>;
+
+function linesToItems(lines: CartLine[], menu: MenuById) {
   const items: GaItem[] = [];
   let value = 0;
   for (const l of lines) {
-    const item = MENU_BY_ID[l.id];
+    const item = menu[l.id];
     if (!item) continue;
     items.push(toGaItem(item, l.qty));
     value += item.price * l.qty;
@@ -100,21 +102,21 @@ export const track = {
     });
   },
 
-  viewCart(lines: CartLine[]) {
-    const { items, value } = linesToItems(lines);
+  viewCart(lines: CartLine[], menu: MenuById) {
+    const { items, value } = linesToItems(lines, menu);
     if (items.length === 0) return;
     ecommerce("view_cart", { value, items });
   },
 
-  beginCheckout(lines: CartLine[]) {
-    const { items, value } = linesToItems(lines);
+  beginCheckout(lines: CartLine[], menu: MenuById) {
+    const { items, value } = linesToItems(lines, menu);
     if (items.length === 0) return;
     ecommerce("begin_checkout", { value, items });
   },
 
   /** Konversi utama: pesanan tersusun & WhatsApp dibuka. */
-  generateLead(lines: CartLine[], orderType: string) {
-    const { items, value } = linesToItems(lines);
+  generateLead(lines: CartLine[], menu: MenuById, orderType: string) {
+    const { items, value } = linesToItems(lines, menu);
     push({
       event: "generate_lead",
       value,

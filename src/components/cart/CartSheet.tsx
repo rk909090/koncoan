@@ -1,17 +1,17 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { Bike, CheckCircle2, ShoppingBag, Store, Trash2, UtensilsCrossed } from "lucide-react";
 import { useRef, useState } from "react";
-import { MENU, MENU_BY_ID } from "@/data/menu";
 import { buildOrderMessage } from "@/lib/order";
 import { track } from "@/lib/analytics";
 import { formatRp, waLink, SITE } from "@/lib/site";
 import { cn } from "@/lib/cn";
 import { cartTotals, useCart, type OrderType } from "@/store/cart";
 import { Sheet } from "@/components/ui/Sheet";
+import { MenuImage } from "@/components/menu/MenuImage";
+import { useMenu } from "@/components/menu/MenuProvider";
 import { QtyControl } from "@/components/ui/QtyControl";
 import { WhatsAppIcon } from "@/components/ui/icons";
 
@@ -29,7 +29,8 @@ export function CartSheet() {
   const setCustomer = useCart((s) => s.setCustomer);
   const clear = useCart((s) => s.clear);
   const openDetail = useCart((s) => s.openDetail);
-  const { count, total } = cartTotals(lines);
+  const { items: menuItems, byId } = useMenu();
+  const { count, total } = cartTotals(lines, byId);
 
   const [touched, setTouched] = useState(false);
   const [sent, setSent] = useState(false);
@@ -40,8 +41,8 @@ export function CartSheet() {
   const addressError = customer.orderType === "delivery" && !customer.address.trim();
   const invalid = nameError || addressError;
 
-  const hasDrink = lines.some((l) => MENU_BY_ID[l.id]?.category === "minuman");
-  const drinkSuggestions = MENU.filter((m) => m.category === "minuman").slice(0, 6);
+  const hasDrink = lines.some((l) => byId[l.id]?.category === "minuman");
+  const drinkSuggestions = menuItems.filter((m) => m.category === "minuman").slice(0, 6);
 
   const handleClose = () => {
     close();
@@ -54,14 +55,14 @@ export function CartSheet() {
     setTouched(true);
     if (count > 0 && !checkoutTracked.current) {
       checkoutTracked.current = true;
-      track.beginCheckout(lines);
+      track.beginCheckout(lines, byId);
     }
     if (invalid || count === 0) {
       document.getElementById("cart-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
-    const url = waLink(buildOrderMessage(lines, customer));
-    track.generateLead(lines, customer.orderType);
+    const url = waLink(buildOrderMessage(lines, customer, byId));
+    track.generateLead(lines, byId, customer.orderType);
     window.open(url, "_blank", "noopener,noreferrer");
     setSent(true);
   };
@@ -179,7 +180,7 @@ export function CartSheet() {
             <ul className="space-y-2.5">
               <AnimatePresence initial={false}>
                 {lines.map((l) => {
-                  const item = MENU_BY_ID[l.id];
+                  const item = byId[l.id];
                   if (!item) return null;
                   return (
                     <motion.li
@@ -196,7 +197,7 @@ export function CartSheet() {
                           className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-[#fff4dc]"
                           aria-label={`Ubah ${item.name}`}
                         >
-                          <Image src={item.image} alt="" fill sizes="64px" className="object-cover" />
+                          <MenuImage item={item} alt="" sizes="64px" />
                         </button>
                         <button
                           type="button"
@@ -217,7 +218,7 @@ export function CartSheet() {
               </AnimatePresence>
             </ul>
 
-            {!hasDrink && (
+            {!hasDrink && drinkSuggestions.length > 0 && (
               <div className="mt-5">
                 <p className="font-display text-lg">Kurang seger? Tambah minum 🧋</p>
                 <div className="no-scrollbar -mx-5 mt-2 flex gap-2.5 overflow-x-auto px-5 pb-1">
@@ -227,7 +228,7 @@ export function CartSheet() {
                       className="flex w-36 shrink-0 flex-col rounded-2xl border-2 border-grape-ink bg-white p-2"
                     >
                       <div className="relative aspect-square overflow-hidden rounded-xl bg-[#fff4dc]">
-                        <Image src={d.image} alt={d.name} fill sizes="144px" className="object-cover" />
+                        <MenuImage item={d} sizes="144px" />
                       </div>
                       <p className="mt-1.5 line-clamp-1 text-xs font-bold">{d.name}</p>
                       <div className="mt-1 flex items-center justify-between">

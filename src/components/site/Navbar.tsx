@@ -6,6 +6,7 @@ import { ShoppingBag } from "lucide-react";
 import { useState } from "react";
 import { Logo } from "@/components/ui/Logo";
 import { cartTotals, useCart } from "@/store/cart";
+import { useMenu } from "@/components/menu/MenuProvider";
 import { cn } from "@/lib/cn";
 
 const LINKS = [
@@ -29,7 +30,8 @@ export function Navbar() {
 
   const lines = useCart((s) => s.lines);
   const open = useCart((s) => s.open);
-  const { count } = cartTotals(lines);
+  const { byId } = useMenu();
+  const { count } = cartTotals(lines, byId);
 
   return (
     <motion.header
