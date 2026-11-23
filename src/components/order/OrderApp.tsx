@@ -11,6 +11,7 @@ import { cartTotals, useCart } from "@/store/cart";
 import { QtyControl } from "@/components/ui/QtyControl";
 import { Logo } from "@/components/ui/Logo";
 import { cn } from "@/lib/cn";
+import { track } from "@/lib/analytics";
 
 /** Normalisasi untuk pencarian: huruf kecil, tanpa aksen. */
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
@@ -36,6 +37,19 @@ export function OrderApp() {
     ...c,
     items: filtered.filter((m) => m.category === c.id),
   })).filter((g) => g.items.length > 0);
+
+  // Analytics: daftar menu dilihat (sekali saat halaman dibuka)
+  useEffect(() => {
+    track.viewItemList("order_page", "Halaman Order", MENU);
+  }, []);
+
+  // Analytics: pencarian (debounce agar tidak terkirim per huruf)
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) return;
+    const t = window.setTimeout(() => track.search(q), 900);
+    return () => window.clearTimeout(t);
+  }, [query]);
 
   // Scroll-spy: tandai kategori yang sedang terlihat
   useEffect(() => {

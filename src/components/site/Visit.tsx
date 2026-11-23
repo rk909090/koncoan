@@ -1,6 +1,7 @@
 import { MapPin, Navigation, Phone } from "lucide-react";
 import { mapsEmbedUrl, mapsUrl, SITE, waLink } from "@/lib/site";
 import { WhatsAppIcon, Sparkle } from "@/components/ui/icons";
+import { TrackedLink } from "@/components/ui/TrackedLink";
 
 export function Visit() {
   return (
@@ -31,29 +32,29 @@ export function Visit() {
               </span>
               <div>
                 <p className="text-xs font-bold tracking-wide text-white/60 uppercase">WhatsApp</p>
-                <a href={waLink()} target="_blank" rel="noreferrer" className="text-lg font-bold underline-offset-4 hover:underline">
+                <TrackedLink kind="whatsapp" location="visit_phone" href={waLink()} className="text-lg font-bold underline-offset-4 hover:underline">
                   {SITE.phoneDisplay}
-                </a>
+                </TrackedLink>
               </div>
             </li>
           </ul>
           <div className="mt-8 flex flex-wrap gap-3">
-            <a
+            <TrackedLink
+              kind="maps"
+              location="visit_button"
               href={mapsUrl}
-              target="_blank"
-              rel="noreferrer"
               className="inline-flex h-13 items-center gap-2 rounded-full border-2 border-grape-ink bg-lemon px-6 font-bold text-grape-ink shadow-pop transition hover:-translate-y-0.5"
             >
               <Navigation className="size-5" strokeWidth={2.6} /> Buka di Google Maps
-            </a>
-            <a
+            </TrackedLink>
+            <TrackedLink
+              kind="whatsapp"
+              location="visit_button"
               href={waLink("Halo Mie Koncoan! Mau tanya-tanya dulu 🙏")}
-              target="_blank"
-              rel="noreferrer"
               className="inline-flex h-13 items-center gap-2 rounded-full border-2 border-grape-ink bg-[#25d366] px-6 font-bold text-grape-ink shadow-pop transition hover:-translate-y-0.5"
             >
               <WhatsAppIcon className="size-5" /> Chat WhatsApp
-            </a>
+            </TrackedLink>
           </div>
         </div>
 

@@ -4,9 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { Bike, CheckCircle2, ShoppingBag, Store, Trash2, UtensilsCrossed } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { MENU, MENU_BY_ID } from "@/data/menu";
 import { buildOrderMessage } from "@/lib/order";
+import { track } from "@/lib/analytics";
 import { formatRp, waLink, SITE } from "@/lib/site";
 import { cn } from "@/lib/cn";
 import { cartTotals, useCart, type OrderType } from "@/store/cart";
@@ -32,6 +33,8 @@ export function CartSheet() {
 
   const [touched, setTouched] = useState(false);
   const [sent, setSent] = useState(false);
+  // begin_checkout cukup sekali per sesi buka keranjang (hindari dobel saat validasi gagal)
+  const checkoutTracked = useRef(false);
 
   const nameError = !customer.name.trim();
   const addressError = customer.orderType === "delivery" && !customer.address.trim();
@@ -44,15 +47,21 @@ export function CartSheet() {
     close();
     setSent(false);
     setTouched(false);
+    checkoutTracked.current = false;
   };
 
   const submit = () => {
     setTouched(true);
+    if (count > 0 && !checkoutTracked.current) {
+      checkoutTracked.current = true;
+      track.beginCheckout(lines);
+    }
     if (invalid || count === 0) {
       document.getElementById("cart-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
     const url = waLink(buildOrderMessage(lines, customer));
+    track.generateLead(lines, customer.orderType);
     window.open(url, "_blank", "noopener,noreferrer");
     setSent(true);
   };
@@ -114,7 +123,13 @@ export function CartSheet() {
             </p>
             <p className="mt-3 text-xs text-grape-ink/60">
               WhatsApp tidak terbuka? Chat manual ke{" "}
-              <a className="font-bold underline" href={waLink()} target="_blank" rel="noreferrer">
+              <a
+                className="font-bold underline"
+                href={waLink()}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => track.contact("cart_sent_fallback")}
+              >
                 {SITE.phoneDisplay}
               </a>
             </p>

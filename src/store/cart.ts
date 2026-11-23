@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { MENU_BY_ID } from "@/data/menu";
+import { track } from "@/lib/analytics";
 
 export type CartLine = { id: string; qty: number; note?: string };
 
@@ -35,12 +36,15 @@ type CartState = {
 
 export const useCart = create<CartState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       lines: [],
       customer: { name: "", orderType: "dine-in", address: "", note: "" },
       isOpen: false,
       detailId: null,
-      add: (id, qty = 1, note) =>
+      add: (id, qty = 1, note) => {
+        const item = MENU_BY_ID[id];
+        const before = get().lines.find((l) => l.id === id)?.qty ?? 0;
+        if (item) track.addToCart(item, Math.min(99, before + qty) - before);
         set((s) => {
           const existing = s.lines.find((l) => l.id === id);
           if (existing) {
@@ -53,24 +57,43 @@ export const useCart = create<CartState>()(
             };
           }
           return { lines: [...s.lines, { id, qty: Math.min(99, qty), note }] };
-        }),
-      setQty: (id, qty) =>
+        });
+      },
+      setQty: (id, qty) => {
+        const item = MENU_BY_ID[id];
+        const before = get().lines.find((l) => l.id === id)?.qty ?? 0;
+        const after = Math.max(0, Math.min(99, qty));
+        if (item && after > before) track.addToCart(item, after - before);
+        if (item && after < before) track.removeFromCart(item, before - after);
         set((s) => ({
           lines:
             qty <= 0
               ? s.lines.filter((l) => l.id !== id)
               : s.lines.map((l) => (l.id === id ? { ...l, qty: Math.min(99, qty) } : l)),
-        })),
+        }));
+      },
       setNote: (id, note) =>
         set((s) => ({
           lines: s.lines.map((l) => (l.id === id ? { ...l, note } : l)),
         })),
-      remove: (id) => set((s) => ({ lines: s.lines.filter((l) => l.id !== id) })),
+      remove: (id) => {
+        const item = MENU_BY_ID[id];
+        const before = get().lines.find((l) => l.id === id)?.qty ?? 0;
+        if (item) track.removeFromCart(item, before);
+        set((s) => ({ lines: s.lines.filter((l) => l.id !== id) }));
+      },
       clear: () => set({ lines: [] }),
       setCustomer: (patch) => set((s) => ({ customer: { ...s.customer, ...patch } })),
-      open: () => set({ isOpen: true, detailId: null }),
+      open: () => {
+        track.viewCart(get().lines);
+        set({ isOpen: true, detailId: null });
+      },
       close: () => set({ isOpen: false }),
-      openDetail: (id) => set({ detailId: id }),
+      openDetail: (id) => {
+        const item = MENU_BY_ID[id];
+        if (item) track.viewItem(item);
+        set({ detailId: id });
+      },
       closeDetail: () => set({ detailId: null }),
     }),
     {

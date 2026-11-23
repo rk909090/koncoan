@@ -7,6 +7,14 @@ import { HowToOrder } from "@/components/site/HowToOrder";
 import { Visit } from "@/components/site/Visit";
 import { Footer } from "@/components/site/Footer";
 import { CartBar } from "@/components/cart/CartBar";
+import { Faq } from "@/components/site/Faq";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { faqLd, menuLd } from "@/lib/seo";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export default function Home() {
   return (
@@ -30,10 +38,12 @@ export default function Home() {
         <MenuSection />
         <Highlights />
         <HowToOrder />
+        <Faq />
         <Visit />
       </main>
       <Footer />
       <CartBar />
+      <JsonLd data={[menuLd(), faqLd()]} />
     </>
   );
 }

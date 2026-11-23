@@ -12,6 +12,7 @@ const LINKS = [
   { href: "/#menu", label: "Menu" },
   { href: "/#kenapa", label: "Kenapa Koncoan" },
   { href: "/#cara-pesan", label: "Cara Pesan" },
+  { href: "/#faq", label: "FAQ" },
   { href: "/#lokasi", label: "Lokasi" },
 ];
 

@@ -1,17 +1,32 @@
 "use client";
 
 import Link from "next/link";
-import { AnimatePresence, LayoutGroup, motion } from "motion/react";
+import { AnimatePresence, LayoutGroup, motion, useInView } from "motion/react";
 import { ArrowRight } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CATEGORIES, MENU, type CategoryId } from "@/data/menu";
 import { MenuCard } from "@/components/menu/MenuCard";
 import { cn } from "@/lib/cn";
+import { track } from "@/lib/analytics";
 
 export function MenuSection() {
   const [active, setActive] = useState<CategoryId>("mie");
   const cat = CATEGORIES.find((c) => c.id === active)!;
   const items = MENU.filter((m) => m.category === active);
+
+  // Analytics: kirim view_item_list saat grid benar-benar terlihat, sekali per kategori
+  const gridRef = useRef<HTMLDivElement>(null);
+  const gridInView = useInView(gridRef, { amount: 0.25 });
+  const tracked = useRef(new Set<CategoryId>());
+  useEffect(() => {
+    if (!gridInView || tracked.current.has(active)) return;
+    tracked.current.add(active);
+    track.viewItemList(
+      `home_${active}`,
+      `Beranda - ${CATEGORIES.find((c) => c.id === active)!.label}`,
+      MENU.filter((m) => m.category === active),
+    );
+  }, [active, gridInView]);
 
   return (
     <section id="menu" className="relative scroll-mt-20 py-20 sm:py-28">
@@ -82,7 +97,7 @@ export function MenuSection() {
           </LayoutGroup>
         </div>
 
-        <motion.div layout className="mt-10 grid grid-cols-2 gap-x-3 gap-y-5 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
+        <motion.div ref={gridRef} layout className="mt-10 grid grid-cols-2 gap-x-3 gap-y-5 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
           <AnimatePresence mode="popLayout">
             {items.map((item, i) => (
               <MenuCard key={item.id} item={item} index={i} />
