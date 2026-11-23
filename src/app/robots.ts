@@ -27,8 +27,8 @@ const AI_AND_SEARCH_BOTS = [
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
-      { userAgent: "*", allow: "/" },
-      { userAgent: AI_AND_SEARCH_BOTS, allow: "/" },
+      { userAgent: "*", allow: "/", disallow: "/admin" },
+      { userAgent: AI_AND_SEARCH_BOTS, allow: "/", disallow: "/admin" },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,
     host: SITE_URL,

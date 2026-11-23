@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
    * Harus konstan: nilai yang sama dipakai saat build dan saat server berjalan.
    */
   deploymentId: "koncoan-2",
+  experimental: {
+    // 404 global untuk multiple root layouts (situs publik & admin)
+    globalNotFound: true,
+  },
 };
 
 export default nextConfig;

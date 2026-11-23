@@ -14,7 +14,7 @@ import { cn } from "@/lib/cn";
 import { track } from "@/lib/analytics";
 
 /** Normalisasi untuk pencarian: huruf kecil, tanpa aksen. */
-const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 export function OrderApp() {
   const [query, setQuery] = useState("");

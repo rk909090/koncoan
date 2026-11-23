@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Lilita_One, Plus_Jakarta_Sans } from "next/font/google";
-import "./globals.css";
+import "../globals.css";
 import { CartHydrator } from "@/components/cart/CartHydrator";
 import { CartSheet } from "@/components/cart/CartSheet";
 import { ItemSheet } from "@/components/cart/ItemSheet";
