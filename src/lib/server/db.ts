@@ -205,7 +205,26 @@ const MIGRATIONS: Migration[] = [
   },
 ];
 
+/**
+ * Migrasi dijalankan di bawah named lock MySQL, karena beberapa proses bisa start bersamaan
+ * (worker build Next.js, proses Passenger) dan tanpa lock bisa saling menambah kolom yang sama.
+ */
 async function runMigrations() {
+  const conn = await getPool().getConnection();
+  try {
+    const [r] = await conn.query<RowDataPacket[]>("SELECT GET_LOCK('koncoan_migrations', 60) AS ok");
+    if (Number(r[0]?.ok) !== 1) throw new Error("Tidak mendapat lock migrasi database");
+    try {
+      await runMigrationsLocked();
+    } finally {
+      await conn.query("SELECT RELEASE_LOCK('koncoan_migrations')");
+    }
+  } finally {
+    conn.release();
+  }
+}
+
+async function runMigrationsLocked() {
   const pool = getPool();
   await pool.query(`CREATE TABLE IF NOT EXISTS schema_migrations (
     version INT UNSIGNED NOT NULL PRIMARY KEY,
