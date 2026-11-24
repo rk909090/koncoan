@@ -47,18 +47,23 @@ export function AutoRefresh({ seconds = 20, count }: { seconds?: number; count?:
     if (count === undefined) return;
     if (prev.current !== undefined && count > prev.current) beep();
     prev.current = count;
-    // Next.js menulis ulang <title> dari metadata setelah refresh → pasang lagi tanda "(n)" setiap judul berubah
+    // Tanda "(n)" di judul tab. Next.js menulis ulang <title> setelah refresh/navigasi, jadi dicek ulang
+    // tiap detik. JANGAN pakai MutationObserver di sini: saat navigasi judul sempat kosong, lalu
+    // "(n) " (spasi di akhir) dinormalisasi browser jadi "(n)" → selalu beda → loop tanpa henti
+    // yang membekukan halaman (bug 23–24 Nov 2026).
+    const strip = (t: string) => t.replace(/^\(\d+\)\s*/, "");
     const apply = () => {
-      const base = document.title.replace(/^\(\d+\)\s*/, "");
+      const base = strip(document.title).trim();
+      if (!base) return; // judul halaman belum siap
       const want = count > 0 ? `(${count}) ${base}` : base;
-      if (document.title !== want) document.title = want;
+      if (document.title.trim() !== want) document.title = want;
     };
     apply();
-    const obs = new MutationObserver(apply);
-    obs.observe(document.head, { childList: true, subtree: true, characterData: true });
+    const t = window.setInterval(apply, 1000);
     return () => {
-      obs.disconnect();
-      document.title = document.title.replace(/^\(\d+\)\s*/, "");
+      window.clearInterval(t);
+      const base = strip(document.title).trim();
+      if (base) document.title = base;
     };
   }, [count]);
 

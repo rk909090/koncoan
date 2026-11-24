@@ -1,5 +1,6 @@
 import "server-only";
 import mysql, { type Pool, type PoolConnection, type ResultSetHeader, type RowDataPacket } from "mysql2/promise";
+import { io } from "next/cache";
 import { MENU } from "@/data/menu";
 
 /**
@@ -305,10 +306,21 @@ function ensureMigrated() {
 
 /* ——————————————————— Helper query ——————————————————— */
 
+/**
+ * Setiap akses database diawali `await io()` (Cache Components):
+ * - Saat prerender — termasuk prerender untuk PREFETCH tautan di panel admin — eksekusi
+ *   berhenti di sini, jadi prefetch hanya mengirim kerangka (loading) tanpa menjalankan query.
+ *   Tanpa ini, membuka menu admin di HP memicu ±100 query sekaligus (semua halaman di-prefetch).
+ * - Mencegah error "Date.now() while prerendering" dari mysql2 saat membuat koneksi baru.
+ * Di request sungguhan, Server Action, route handler, dan di dalam "use cache" (menu publik),
+ * `io()` langsung selesai sehingga perilakunya sama seperti biasa.
+ */
+
 export type Row = RowDataPacket;
 type Param = string | number | boolean | null | Date | Buffer;
 
 export async function query<T extends Row = Row>(sql: string, params: Param[] = []): Promise<T[]> {
+  await io();
   await ensureMigrated();
   const [rows] = await getPool().query<T[]>(sql, params);
   return rows;
@@ -320,6 +332,7 @@ export async function queryOne<T extends Row = Row>(sql: string, params: Param[]
 }
 
 export async function execute(sql: string, params: Param[] = []): Promise<ResultSetHeader> {
+  await io();
   await ensureMigrated();
   const [res] = await getPool().query<ResultSetHeader>(sql, params);
   return res;
@@ -327,6 +340,7 @@ export async function execute(sql: string, params: Param[] = []): Promise<Result
 
 /** Jalankan beberapa query dalam satu transaksi. */
 export async function transaction<T>(fn: (conn: PoolConnection) => Promise<T>): Promise<T> {
+  await io();
   await ensureMigrated();
   const conn = await getPool().getConnection();
   try {
