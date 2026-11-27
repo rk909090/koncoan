@@ -1,11 +1,13 @@
 /**
  * Data terstruktur (JSON-LD, schema.org) untuk SEO, AEO & GEO.
  * Semua angka/menu dibangkitkan dari menu aktif (database, lihat
- * src/lib/server/menu.ts) agar selalu sama dengan yang tampil di situs. Tidak ada data yang tidak diketahui
- * (jam buka, rating, metode pembayaran, koordinat) — sengaja dikosongkan.
+ * src/lib/server/menu.ts) agar selalu sama dengan yang tampil di situs. Jam buka, telepon & koordinat
+ * diambil dari Google Business Profile (lihat GBP di src/lib/site.ts). Data yang tidak diketahui
+ * (rating, metode pembayaran) sengaja dikosongkan — rating dari ulasan Google tidak boleh ditandai
+ * sendiri (self-serving review markup).
  */
 import { CATEGORIES, type MenuItem } from "@/data/menu";
-import { formatRp, mapsUrl, SITE } from "@/lib/site";
+import { formatRp, GBP, mapsUrl, OPENING_HOURS, SITE } from "@/lib/site";
 import type { OrderingSettings } from "@/lib/ordering";
 
 export const SITE_URL = "https://koncoan.my.id";
@@ -31,6 +33,13 @@ export function priceStats(menu: Menu) {
 const rangeText = (r: { min: number; max: number } | null) =>
   !r ? "" : r.min === r.max ? formatRp(r.min) : `${formatRp(r.min)}–${formatRp(r.max)}`;
 export { rangeText as priceRangeText };
+
+/** "mie, wonton, dimsum" — "gohyong" hanya disebut bila ada di menu aktif. */
+export function foodsText(menu: Menu) {
+  const foods = ["mie", "wonton", "dimsum"];
+  if (menu.some((m) => /gohyong/i.test(m.name))) foods.push("gohyong");
+  return foods.join(", ");
+}
 
 /**
  * Alamat: jalan & patokan dari brosur. Desa/kecamatan/kabupaten/kode pos
@@ -70,15 +79,33 @@ export function restaurantLd(menu: Menu) {
     alternateName: "Warung Mie Koncoan",
     slogan: SITE.tagline,
     description:
-      "Warung mie anak muda di Jl. Raya Sebaung, depan SMAN 1 Gending. Menu mie, wonton, dimsum, gohyong dan Konco Fresh Drink" +
+      `Warung mie anak muda di Jl. Raya Sebaung, depan SMAN 1 Gending. Menu ${foodsText(menu)} dan Konco Fresh Drink` +
       (all ? `, harga ${rangeText(all)}` : "") +
-      `. Pesan lewat WhatsApp ${SITE.phoneDisplay}.`,
+      `. Buka ${OPENING_HOURS.text}. Pesan lewat WhatsApp ${SITE.phoneDisplay}.`,
     url: SITE_URL,
     logo: abs("/brand/logo-koncoan.png"),
     image: [abs("/opengraph-image.png"), abs("/menu/hero.webp")],
-    telephone: "+62-858-1221-5099",
+    telephone: GBP.phoneSchema,
     address: ADDRESS,
+    geo: { "@type": "GeoCoordinates", latitude: GBP.lat, longitude: GBP.lng },
     hasMap: mapsUrl,
+    sameAs: [GBP.mapsUrl],
+    openingHoursSpecification: [
+      {
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: OPENING_HOURS.days.map((d) => `https://schema.org/${d}`),
+        opens: OPENING_HOURS.opens,
+        closes: OPENING_HOURS.closes,
+      },
+    ],
+    contactPoint: {
+      "@type": "ContactPoint",
+      name: "WhatsApp pesanan",
+      contactType: "customer service",
+      telephone: `+${SITE.whatsapp}`,
+      url: `https://wa.me/${SITE.whatsapp}`,
+      availableLanguage: "id",
+    },
     servesCuisine: ["Mie", "Wonton", "Dimsum", "Indonesian"],
     ...(all ? { priceRange: `${formatRp(all.min)} - ${formatRp(all.max)}` } : {}),
     currenciesAccepted: "IDR",
@@ -179,7 +206,11 @@ export function getFaqs(menu: Menu, ordering: OrderingSettings): Faq[] {
       : null,
     {
       q: "Di mana lokasi Mie Koncoan?",
-      a: `Mie Koncoan ada di ${SITE.address} (Gending, Probolinggo, Jawa Timur).`,
+      a: `Mie Koncoan ada di ${SITE.address} (Gending, Probolinggo, Jawa Timur), cari "Mie KonCOan" di Google Maps.`,
+    },
+    {
+      q: "Jam berapa Mie Koncoan buka?",
+      a: `Mie Koncoan buka ${OPENING_HOURS.text}.`,
     },
     {
       q: "Bagaimana cara pesan Mie Koncoan?",

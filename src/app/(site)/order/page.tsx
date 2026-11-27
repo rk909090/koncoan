@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import { OrderApp } from "@/components/order/OrderApp";
 import { CartBar } from "@/components/cart/CartBar";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { breadcrumbLd, menuLd, priceRangeText, priceStats } from "@/lib/seo";
+import { breadcrumbLd, foodsText, menuLd, priceRangeText, priceStats } from "@/lib/seo";
 import { getPublicMenu } from "@/lib/server/menu";
 import { SITE } from "@/lib/site";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const all = priceStats(await getPublicMenu()).all;
-  const DESCRIPTION = `Order online menu Mie Koncoan: mie, wonton, dimsum, gohyong & minuman${
+  const menu = await getPublicMenu();
+  const all = priceStats(menu).all;
+  const DESCRIPTION = `Order online menu Mie Koncoan: ${foodsText(menu)} & minuman${
     all ? ` (${priceRangeText(all)})` : ""
   }. Pilih menu, pesanan otomatis terkirim ke WhatsApp ${SITE.phoneDisplay}.`;
 

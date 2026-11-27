@@ -9,7 +9,7 @@ import { MenuProvider } from "@/components/menu/MenuProvider";
 import { getPublicMenu } from "@/lib/server/menu";
 import { getPublicOrdering } from "@/lib/server/settings";
 import { SITE } from "@/lib/site";
-import { priceStats, restaurantLd, SITE_URL, websiteLd } from "@/lib/seo";
+import { foodsText, priceStats, restaurantLd, SITE_URL, websiteLd } from "@/lib/seo";
 import { formatRp } from "@/lib/site";
 
 /** Google Tag Manager container (snippet resmi dari container GTM-T6QB83QZ). */
@@ -32,8 +32,10 @@ const jakarta = Plus_Jakarta_Sans({
 
 /** Metadata memakai harga termurah dari menu aktif (database). */
 export async function generateMetadata(): Promise<Metadata> {
-  const min = priceStats(await getPublicMenu()).all?.min;
-  const DESCRIPTION = `Mie Koncoan — warung mie anak muda di Jl. Raya Sebaung, depan SMAN 1 Gending (Probolinggo). Mie, wonton, dimsum, gohyong & Konco Fresh Drink${
+  const menu = await getPublicMenu();
+  const min = priceStats(menu).all?.min;
+  const foods = foodsText(menu);
+  const DESCRIPTION = `Mie Koncoan — warung mie anak muda di Jl. Raya Sebaung, depan SMAN 1 Gending (Probolinggo). ${foods.charAt(0).toUpperCase()}${foods.slice(1)} & Konco Fresh Drink${
     min ? ` mulai ${formatRp(min)}` : ""
   }. Pesan online, kirim lewat WhatsApp.`;
 
